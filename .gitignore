@@ -1,0 +1,6 @@
+node_modules/
+.env
+deployment_package.zip
+*.log
+.DS_Store
+coverage/

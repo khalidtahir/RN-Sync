@@ -1,0 +1,20 @@
+{
+    "name": "rn-sync-backend",
+    "version": "1.0.0",
+    "description": "Serverless backend for RN Sync",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+        "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+        "start:simulator": "node tests/simulator.js"
+    },
+    "author": "RN Sync Team",
+    "license": "ISC",
+    "dependencies": {
+        "@aws-sdk/client-cognito-identity-provider": "^3.0.0",
+        "ws": "^8.0.0"
+    },
+    "devDependencies": {
+        "jest": "^29.0.0"
+    }
+}
