@@ -4,10 +4,22 @@
     "description": "Serverless backend for RN Sync",
     "main": "index.js",
     "type": "module",
+    "private": true,
+    "engines": {
+        "node": ">=18.0.0"
+    },
     "scripts": {
         "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
         "start:simulator": "node tests/simulator.js"
     },
+    "keywords": [
+        "aws",
+        "lambda",
+        "serverless",
+        "websocket",
+        "api-gateway",
+        "cognito"
+    ],
     "author": "RN Sync Team",
     "license": "ISC",
     "dependencies": {

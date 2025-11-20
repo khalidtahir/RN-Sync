@@ -28,11 +28,23 @@ describe('ApiService', () => {
 
         const data = await service.getHistory('device-123', 10);
 
-        expect(mockSelect).toHaveBeenCalledWith('sensor_readings', {
+        expect(mockSelect).toHaveBeenCalledWith('readings', {
             order: 'timestamp.desc',
             limit: 10,
             filters: { device_id: 'device-123' }
         });
         expect(data).toHaveLength(1);
+    });
+
+    test('getHistory without deviceId does not apply filters', async () => {
+        mockSelect.mockResolvedValue([]);
+
+        await service.getHistory(undefined, 5);
+
+        expect(mockSelect).toHaveBeenCalledWith('readings', {
+            order: 'timestamp.desc',
+            limit: 5,
+            filters: {}
+        });
     });
 });
