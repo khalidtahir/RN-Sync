@@ -140,3 +140,10 @@ vite.config.ts.timestamp-*
 
 # Custom Exclusions
 deployment_package.zip
+create_deployment_package.ps1
+docs/DEMO_SCRIPT.md
+docs/todo_list.md
+
+todo_list.md 
+DEMO_SCRIPT.md 
+
