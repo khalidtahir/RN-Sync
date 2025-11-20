@@ -3,7 +3,7 @@ import { SupabaseClient } from '../utils/supabase-client.js';
 export class ApiService {
     constructor() {
         this.supabase = new SupabaseClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-        this.tableName = process.env.TABLE_NAME || 'sensor_readings';
+        this.tableName = process.env.TABLE_NAME || 'readings';
     }
 
     async getHealth() {
