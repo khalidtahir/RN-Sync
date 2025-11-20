@@ -1,0 +1,216 @@
+{
+  "info": {
+    "name": "RN-Sync Backend API",
+    "description": "Complete API testing collection for RN-Sync Backend Database + Patient Data Layer",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health & Status",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Patients",
+      "item": [
+        {
+          "name": "Get All Patients",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/patients",
+              "host": ["{{base_url}}"],
+              "path": ["api", "patients"]
+            }
+          }
+        },
+        {
+          "name": "Get Patient by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/patients/{{patient_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "patients", "{{patient_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Patient",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Smith\",\n  \"bed\": \"ICU-5\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/patients",
+              "host": ["{{base_url}}"],
+              "path": ["api", "patients"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Readings",
+      "item": [
+        {
+          "name": "Get Patient History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/patients/{{patient_id}}/history",
+              "host": ["{{base_url}}"],
+              "path": ["api", "patients", "{{patient_id}}", "history"]
+            }
+          }
+        },
+        {
+          "name": "Get Patient History (with filters)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/patients/{{patient_id}}/history?metric=heart_rate&from=2025-01-20T00:00:00Z&to=2025-01-20T23:59:59Z",
+              "host": ["{{base_url}}"],
+              "path": ["api", "patients", "{{patient_id}}", "history"],
+              "query": [
+                {
+                  "key": "metric",
+                  "value": "heart_rate"
+                },
+                {
+                  "key": "from",
+                  "value": "2025-01-20T00:00:00Z"
+                },
+                {
+                  "key": "to",
+                  "value": "2025-01-20T23:59:59Z"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add Reading",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"metric\": \"heart_rate\",\n  \"value\": 85,\n  \"unit\": \"bpm\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/patients/{{patient_id}}/readings",
+              "host": ["{{base_url}}"],
+              "path": ["api", "patients", "{{patient_id}}", "readings"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Files",
+      "item": [
+        {
+          "name": "Get Patient Files",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/patients/{{patient_id}}/files",
+              "host": ["{{base_url}}"],
+              "path": ["api", "patients", "{{patient_id}}", "files"]
+            }
+          }
+        },
+        {
+          "name": "Get File by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/files/{{file_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "files", "{{file_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Add File",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"file_name\": \"ecg_report.pdf\",\n  \"file_type\": \"pdf\",\n  \"storage_url\": \"s3://bucket/ecg_report.pdf\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/patients/{{patient_id}}/files",
+              "host": ["{{base_url}}"],
+              "path": ["api", "patients", "{{patient_id}}", "files"]
+            }
+          }
+        },
+        {
+          "name": "Delete File",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/files/{{file_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "files", "{{file_id}}"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:5000"
+    },
+    {
+      "key": "patient_id",
+      "value": ""
+    },
+    {
+      "key": "file_id",
+      "value": ""
+    }
+  ]
+}
