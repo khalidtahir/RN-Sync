@@ -22,6 +22,7 @@ export const handler = async (event) => {
 
             case 'ingest':
                 const body = JSON.parse(event.body);
+                console.log("Ingested Data:", JSON.stringify(body, null, 2));
                 return await service.handleIngest(body);
 
             default:
