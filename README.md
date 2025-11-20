@@ -1,6 +1,6 @@
 # RN Sync Backend
 
-This repository contains the serverless backend for the RN Sync platform, built with AWS Lambda, API Gateway, and Cognito.
+This repository contains the backend for the RN Sync platform
 
 ## Project Structure
 
