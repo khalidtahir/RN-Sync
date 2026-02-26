@@ -3,7 +3,7 @@ import { SupabaseClient } from '../utils/supabase-client.js';
 export class WebSocketService {
     constructor() {
         this.supabase = new SupabaseClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-        this.tableName = process.env.TABLE_NAME || 'sensor_readings';
+        this.tableName = process.env.TABLE_NAME || 'readings';
     }
 
     async handleConnect() {
@@ -15,10 +15,19 @@ export class WebSocketService {
     }
 
     async handleIngest(body) {
-        // 1. Save to Supabase
-        await this.supabase.insert(this.tableName, body);
+        // Map to 'readings' table schema
+        const record = {
+            patient_id: body.patientId,
+            metric: body.metric,
+            value: body.value,
+            unit: body.unit,
+            timestamp: body.timestamp || new Date().toISOString()
+        };
 
-        // 2. Echo back (for now)
-        return { statusCode: 200, body: `Echo from AWS: ${JSON.stringify(body.payload)}` };
+        // 1. Save to Supabase
+        await this.supabase.insert('readings', record);
+
+        // 2. Echo back
+        return { statusCode: 200, body: `Data saved for patient: ${body.patientId}` };
     }
 }

@@ -7,5 +7,9 @@
     "api": {
         "websocketUrl": "wss://dn118dyd65.execute-api.us-east-2.amazonaws.com/dev/",
         "httpUrl": "https://vuoog0y6uf.execute-api.us-east-2.amazonaws.com"
+    },
+    "simulator": {
+        "username": "patient0@rnsync.com",
+        "password": "123456.Ab"
     }
 }

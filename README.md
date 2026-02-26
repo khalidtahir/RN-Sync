@@ -11,8 +11,7 @@ This repository contains the backend for the RN Sync platform
 │   ├── services/       # Business logic (Testable, framework-agnostic)
 │   └── utils/          # Shared utilities (Supabase client, etc.)
 ├── tests/              # Jest test suite and Simulator
-├── docs/               # Documentation (API docs, Best Practices)
-├── create_deployment_package.ps1 # Deployment script
+├── docs/               # Documentation (API docs, system overview, demos)
 └── package.json        # Dependencies and scripts
 ```
 
@@ -43,5 +42,6 @@ This project is deployed to AWS.
 
 ## Documentation
 
-*   [API Documentation](docs/API_DOCUMENTATION.md)
-*   [Best Practices](docs/BEST_PRACTICES.md)
+*   [System Overview](docs/SYSTEM_OVERVIEW.md) – Current architecture, deployment pipeline, and roadmap
+*   [API Documentation](docs/API_DOCUMENTATION.md) – Endpoint specs and payload examples
+*   [Best Practices](docs/BEST_PRACTICES.md) – Coding and operational guidelines
