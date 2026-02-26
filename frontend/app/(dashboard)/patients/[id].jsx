@@ -40,7 +40,14 @@ const PatientDetails = () => {
 
   // webSocket connection
   useEffect(() => {
+    // Don't connect if token isn't available yet
+    if (!token) {
+      console.log("Waiting for authentication token...");
+      return;
+    }
+
     // 1. Get Token
+    console.log("Token available, length:", token.length);
 
     // 2. Connect with Token
     const secureUrl = `${WS_URL}?token=${token}`;
@@ -52,23 +59,31 @@ const PatientDetails = () => {
       console.log("Connected! Starting data stream...");
 
       // Send data every 1 second
-      setInterval(() => {
+      const intervalId = setInterval(() => {
         const data = generateHeartRateData();
+        // Match the format expected by websocket-handler (ingest route)
         const message = {
           action: "ingest",
-          deviceId: 1,
-          payload: data,
+          patientId: id, // Use the patient ID from the route
+          metric: "heart_rate",
+          value: data.bpm,
+          unit: "bpm",
+          timestamp: new Date().toISOString()
         };
 
         ws.send(JSON.stringify(message));
         console.log("Sent:", message);
-        setData((prevData) => [...prevData, message.payload.bpm]);
+        setData((prevData) => [...prevData, data.bpm]);
       }, 1000);
+
+      // Store intervalId for cleanup
+      ws.intervalId = intervalId;
     };
 
-    ws.onmessage = (data) => {
-      console.log("Received from server:", data.toString());
-      setData((prevData) => [...prevData, data.payload.bpm]);
+    ws.onmessage = (event) => {
+      console.log("Received from server:", event.data);
+      // Server sends status messages, not data to display
+      // Real data should be fetched via HTTP API
     };
 
     ws.onclose = () => {
@@ -79,7 +94,17 @@ const PatientDetails = () => {
     ws.onerror = (err) => {
       console.error("Connection error:", err.message);
     };
-  }, []);
+
+    // Cleanup function
+    return () => {
+      if (ws.intervalId) {
+        clearInterval(ws.intervalId);
+      }
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
+    };
+  }, [token]); // Re-run when token becomes available
 
   return (
     <View style={styles.container}>
