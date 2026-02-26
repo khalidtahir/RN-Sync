@@ -2,6 +2,7 @@
   "name": "rn_sync",
   "version": "1.0.0",
   "main": "expo-router/entry",
+  "proxy": "http://10.216.219.27:5000",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
@@ -11,6 +12,7 @@
   "dependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.975.0",
     "aws-sdk": "^2.1693.0",
+    "axios": "^1.13.5",
     "buffer": "^6.0.3",
     "expo": "~54.0.32",
     "expo-constants": "~18.0.13",

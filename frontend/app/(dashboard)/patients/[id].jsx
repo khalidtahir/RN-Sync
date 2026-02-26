@@ -1,7 +1,7 @@
-import { StyleSheet, Text, View, Dimensions } from "react-native";
+import { StyleSheet, Text, View, Dimensions, Pressable } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-// import WebSocket from "ws";
+import axios from "axios";
 
 import { LineChart } from "react-native-chart-kit";
 import { useUser } from "../../../hooks/useUser";
@@ -18,72 +18,107 @@ function generateHeartRateData() {
 }
 
 const PatientDetails = () => {
-  const { id } = useLocalSearchParams();
-  const { token } = useUser();
+  const { id, name } = useLocalSearchParams();
+  const { user, token } = useUser();
 
   const [data, setData] = useState([80]);
-  // useEffect(() => {
-  //   // 1. Set up the interval
-  //   const intervalId = setInterval(() => {
-  //     // Use functional state updates (prevCount) to avoid stale closures
-  //     setData((prevData) => [
-  //       ...prevData,
-  //       Math.floor(Math.random() * (100 - 60 + 1)) + 60,
-  //     ]);
-  //   }, 1000); // 1000ms = 1 second
-
-  //   // 2. Return a cleanup function
-  //   return () => {
-  //     clearInterval(intervalId); // Clear the interval when the component unmounts
-  //   };
-  // }, []);
+  const [history, setHistory] = useState([]);
+  const [toggleHistory, setToggleHistory] = useState(false);
+  const [webSocket, setWebSocket] = useState(null);
 
   // webSocket connection
   useEffect(() => {
     // 1. Get Token
+    // Don't connect if token isn't available yet
+    if (!token) {
+      console.log("Waiting for authentication token...");
+      return;
+    }
+
+    // 1. Get Token
+    console.log("Token available, length:", token.length);
 
     // 2. Connect with Token
     const secureUrl = `${WS_URL}?token=${token}`;
     console.log(`Connecting to WebSocket...`);
 
     const ws = new WebSocket(secureUrl);
+    setWebSocket(ws);
 
     ws.onopen = () => {
       console.log("Connected! Starting data stream...");
 
       // Send data every 1 second
-      setInterval(() => {
+      const intervalId = setInterval(() => {
         const data = generateHeartRateData();
+        // Match the format expected by websocket-handler (ingest route)
         const message = {
           action: "ingest",
-          deviceId: 1,
-          payload: data,
+          patientId: id, // Use the patient ID from the route
+          metric: "heart_rate",
+          value: data.bpm,
+          unit: "bpm",
+          timestamp: new Date().toISOString(),
         };
 
         ws.send(JSON.stringify(message));
         console.log("Sent:", message);
-        setData((prevData) => [...prevData, message.payload.bpm]);
+        setData((prevData) => {
+          let temp = [...prevData, data.bpm];
+          if (temp.length < 30) {
+            return temp;
+          }
+          return temp.slice(1);
+        });
       }, 1000);
+
+      // Store intervalId for cleanup
+      ws.intervalId = intervalId;
     };
 
-    ws.onmessage = (data) => {
-      console.log("Received from server:", data.toString());
-      setData((prevData) => [...prevData, data.payload.bpm]);
+    ws.onmessage = (e) => {
+      console.log("Message received");
+      console.log("Received from server:", e.data);
+      // setData((prevData) => [...prevData, data.payload.bpm]);
     };
 
     ws.onclose = () => {
       console.log("Disconnected.");
-      process.exit(0);
     };
 
     ws.onerror = (err) => {
       console.error("Connection error:", err.message);
     };
-  }, []);
+
+    // Clean up the WebSocket connection when the component unmounts
+    return () => {
+      if (ws.intervalId) {
+        clearInterval(ws.intervalId);
+      }
+      if (ws.readyState === WebSocket.OPEN) {
+        ws.close();
+      }
+    };
+  }, [token]);
+
+  const getHistory = (id) => {
+    console.log("Querying patients history!");
+
+    axios
+      .get(
+        `http://192.168.2.218:5000/api/patients/${id}/history?metric=heart_rate`,
+      )
+      .then((response) => {
+        setHistory(response.data.data);
+        console.log(response.data);
+      })
+      .catch((error) => console.error("couldn't be done champ", error));
+  };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.welcome}>Patient Details for {id}</Text>
+      <Text style={styles.welcome}>Patient Details for {name}</Text>
+      <Text>For Doctor {user}</Text>
       <LineChart
         data={{
           labels: ["4AM", "5AM", "6AM", "7AM", "8AM", "9AM"],
@@ -120,6 +155,9 @@ const PatientDetails = () => {
           borderRadius: 16,
         }}
       />
+      <Pressable onPress={() => getHistory(id)}>
+        <Text>See historical data</Text>
+      </Pressable>
     </View>
   );
 };

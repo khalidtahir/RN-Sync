@@ -1,4 +1,6 @@
 import { router } from "expo-router";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import { StyleSheet, Text, View, FlatList, Pressable } from "react-native";
 
 const patients = [
@@ -13,17 +15,36 @@ const patients = [
 ];
 
 const Patients = () => {
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    console.log("Querying patients!");
+
+    axios
+      .get(`http://192.168.2.218:5000/api/patients`)
+      .then((response) => {
+        setData(response.data.data);
+        console.log(response.data);
+      })
+      .catch((error) => console.error("couldn't be done champ", error));
+  }, []);
+
   return (
     <View style={styles.container}>
       <Text style={styles.welcome}>Patients</Text>
       <FlatList
-        data={patients}
+        data={data}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.list}
         renderItem={({ item }) => (
           <Pressable
             style={styles.patient}
-            onPress={() => router.push(`/patients/${item.name}`)}
+            onPress={() =>
+              router.push({
+                pathname: `/patients/${item.id}`,
+                params: { id: item.id, name: item.name },
+              })
+            }
           >
             <Text style={styles.name}>{item.name}</Text>
           </Pressable>
