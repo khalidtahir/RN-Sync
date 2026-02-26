@@ -6,7 +6,7 @@ _Last updated: November 2025_
 
 The RN Sync backend delivers two interfaces:
 
-- **HTTP API** (AWS API Gateway → `api-handler`) for patient, readings, and file CRUD.
+- **HTTP API** (AWS API Gateway → `api-handler`) for patient, readings, and file upload.
 - **WebSocket API** (`websocket-handler` + `ws-auth-handler`) for secure vital-stream ingestion.
 
 ### Base URLs
@@ -117,7 +117,7 @@ Authorization: Bearer <token>
 
 ## 5. Environment & Deployment Notes
 
-- Lambdas require `SUPABASE_URL` and `SUPABASE_KEY`. Store them in AWS Lambda environment variables or Secrets Manager; do **not** commit keys to source control.
+- Lambdas require `SUPABASE_URL` and `SUPABASE_KEY`. Store them in AWS Lambda environment variables or Secrets Manager
 - CI/CD: `.github/workflows/deploy.yml` runs on `main` pushes, executes Jest, zips the repo (excluding docs/tests), and updates:
   - `api-handler`
   - `websocket-handler`

@@ -2,12 +2,6 @@
  * RN Sync Data Simulator (Secure Version)
  * 
  * This script simulates a patient monitor (laptop) sending data to the cloud.
- * NOW WITH SECURITY: It logs in to Cognito first to get a token.
- * 
- * PREREQUISITES:
- * 1. Node.js installed.
- * 2. Run `npm install ws @aws-sdk/client-cognito-identity-provider`
- * 3. Create a user in Cognito (see todo_list.md).
  */
 
 import WebSocket from 'ws';

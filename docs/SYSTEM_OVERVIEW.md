@@ -14,7 +14,7 @@ This document captures the current state of the serverless backend in this repos
 - Required environment variables per Lambda:
   - `SUPABASE_URL`
   - `SUPABASE_KEY`
-- GitHub Actions workflow `.github/workflows/deploy.yml` runs tests, zips the repo, and updates all three Lambda functions. The workflow excludes legacy assets (`backend/*`, docs, tests) from the deployment artifact.
+- GitHub Actions workflow `.github/workflows/deploy.yml` runs tests, zips the repo, and updates all three Lambda functions. 
 - Local development:
   1. `npm install`
   2. `npm test`
@@ -28,33 +28,5 @@ This document captures the current state of the serverless backend in this repos
 
 Detailed payloads and examples remain in `docs/API_DOCUMENTATION.md`.
 
-## 4. Future Enhancements
 
-The platform is functional, but the following upgrades will provide a more production-ready experience:
-
-1. **Configuration Hardening**
-   - Replace the raw `aws-config.json` with environment-specific config and secret storage (SSM / Secrets Manager).
-   - Add a typed env loader (zod/joi) to catch missing variables at cold-start.
-
-2. **Observability**
-   - Introduce structured logging (pino) and correlation IDs.
-   - Ship metrics and alerts via CloudWatch Alarms for Lambda error spikes.
-
-3. **Data Access Layer**
-   - Expand `SupabaseClient` with update/delete methods and richer filtering.
-   - Extract repositories/interfaces to decouple handlers from Supabase-specific logic.
-
-4. **Routing & Validation**
-   - Adopt a lightweight router or request builder to reduce manual regex checks in `api-handler`.
-   - Add schema validation for patient/file/readings payloads and return consistent error objects.
-
-5. **CI / Delivery**
-   - Add linting/formatting to the workflow.
-   - Cache dependencies between jobs to speed up test + deploy stages.
-
-6. **Simulator & Tooling**
-   - Parameterize simulator intervals and metrics.
-   - Provide Postman/VS Code REST collections that point to the live API Gateway endpoints.
-
-Keeping this document current ensures new contributors understand both the deployed footprint and the roadmap.
 
