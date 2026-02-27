@@ -23,15 +23,17 @@ const Patients = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.welcome}>Patients</Text>
-      <FlatList
-        data={data}
-        style={styles.patients}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
-        renderItem={({ item, index }) => (
-          <Patient patient={item} index={index} />
-        )}
-      />
+      {data && (
+        <FlatList
+          data={data.slice(-3)}
+          style={styles.patients}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          renderItem={({ item, index }) => (
+            <Patient patient={item} index={index} />
+          )}
+        />
+      )}
     </View>
   );
 };

@@ -63,7 +63,7 @@ const Login = () => {
       ></TextInput>
 
       <Pressable onPress={handleSubmit} style={styles.button}>
-        <Text>Login</Text>
+        <Text>LOGIN</Text>
       </Pressable>
 
       {error && (
@@ -90,6 +90,8 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: "lightgreen",
     padding: 18,
+    paddingLeft: 40,
+    paddingRight: 40,
     borderRadius: 6,
     marginVertical: 10,
   },
@@ -98,5 +100,8 @@ const styles = StyleSheet.create({
     padding: 20,
     marginTop: 10,
     borderRadius: 10,
+  },
+  welcome: {
+    fontSize: 20,
   },
 });

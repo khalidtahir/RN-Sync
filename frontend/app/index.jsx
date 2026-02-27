@@ -1,8 +1,10 @@
 import { Link } from "expo-router";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, Image } from "react-native";
+import logo from "../assets/RNSyncLogo.png";
 const Home = () => {
   return (
     <View style={styles.container}>
+      <Image source={logo} style={styles.logo} />
       <Text style={styles.welcome}>Welcome to RNSync!</Text>
       <Link href="/login" style={styles.link}>
         Sign In
@@ -19,10 +21,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   welcome: {
-    fontSize: 20,
+    fontSize: 30,
     marginBottom: 20,
   },
   link: {
     textDecorationLine: "underline",
+  },
+  logo: {
+    height: 150,
+    width: 150,
+    marginBottom: 20,
   },
 });
