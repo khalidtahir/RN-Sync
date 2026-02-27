@@ -13,6 +13,7 @@ const DashboardLayout = () => {
     <Tabs
       screenOptions={{
         headerShown: false,
+        unmountOnBlur: true,
         tabBarStyle: {
           // backgroundColor: theme.navBackground,
           paddingTop: 10,

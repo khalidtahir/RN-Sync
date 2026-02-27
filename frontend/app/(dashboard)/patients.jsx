@@ -3,6 +3,8 @@ import axios from "axios";
 import { StyleSheet, Text, View, FlatList, Pressable } from "react-native";
 import Patient from "../../components/Patient";
 
+const HTTP_URL = "https://vuoog0y6uf.execute-api.us-east-2.amazonaws.com";
+
 const Patients = () => {
   const [data, setData] = useState(null);
 
@@ -10,7 +12,7 @@ const Patients = () => {
     console.log("Querying patients!");
 
     axios
-      .get(`http://10.216.219.27:5000/api/patients`)
+      .get(`${HTTP_URL}/patients`)
       .then((response) => {
         setData(response.data.data);
         console.log(response.data);

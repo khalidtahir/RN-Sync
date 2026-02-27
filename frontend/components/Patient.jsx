@@ -8,7 +8,7 @@ import RobertImage from "../assets/Robert.png";
 const images = [JaneImage, JohnImage, RobertImage];
 
 const Patient = ({ patient, index }) => {
-  const { bed, id, last_metric, latest_vital, name } = patient;
+  const { bed, id, created_at, name } = patient;
 
   console.log(index);
 
@@ -22,9 +22,9 @@ const Patient = ({ patient, index }) => {
         })
       }
     >
-      <Image source={images[index]} style={styles.headshot} />
+      <Image source={images[index % images.length]} style={styles.headshot} />
       <Text style={styles.name}>{name}</Text>
-      <Text style={styles.vital}>{latest_vital}</Text>
+      {/* <Text style={styles.vital}>{latest_vital}</Text> */}
     </Pressable>
   );
 };
@@ -32,7 +32,7 @@ export default Patient;
 const styles = StyleSheet.create({
   patient: {
     width: "90%",
-    height: 30,
+    height: 10,
     flex: 1,
     flexDirection: "row",
     justifyContent: "space-between",

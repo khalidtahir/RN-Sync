@@ -14,6 +14,7 @@ const RootLayout = () => {
             backgroundColor: "#f2f2f2",
           },
           headerTintColor: "#000000",
+          unmountOnBlur: true,
         }}
       >
         <Stack.Screen

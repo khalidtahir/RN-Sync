@@ -5,7 +5,13 @@ const AuthLayout = () => {
   return (
     <>
       <StatusBar style="auto" />
-      <Stack screenOptions={{ headerShown: false, animation: "none" }} />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          animation: "none",
+          unmountOnBlur: true,
+        }}
+      />
     </>
   );
 };
