@@ -1,10 +1,20 @@
-import { StyleSheet, Text, View, Dimensions, Pressable } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  View,
+  Dimensions,
+  Pressable,
+  FlatList,
+} from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { LineChart } from "react-native-chart-kit";
 import { useUser } from "../../../hooks/useUser";
+import Card from "../../../components/Card";
+import Spacer from "../../../components/Spacer";
 
 const WS_URL = "wss://dn118dyd65.execute-api.us-east-2.amazonaws.com/dev/";
 
@@ -25,6 +35,8 @@ const PatientDetails = () => {
   const [history, setHistory] = useState([]);
   const [toggleHistory, setToggleHistory] = useState(false);
   const [webSocket, setWebSocket] = useState(null);
+
+  const insets = useSafeAreaInsets();
 
   // webSocket connection
   useEffect(() => {
@@ -106,17 +118,24 @@ const PatientDetails = () => {
 
     axios
       .get(
-        `http://192.168.2.218:5000/api/patients/${id}/history?metric=heart_rate`,
+        `http://172.20.10.4:5000/api/patients/${id}/history?metric=heart_rate`,
       )
       .then((response) => {
         setHistory(response.data.data);
+        setToggleHistory(true);
         console.log(response.data);
       })
       .catch((error) => console.error("couldn't be done champ", error));
   };
 
   return (
-    <View style={styles.container}>
+    <View
+      style={{
+        ...styles.container,
+        paddingTop: insets.top,
+        paddingBottom: insets.bottom,
+      }}
+    >
       <Text style={styles.welcome}>Patient Details for {name}</Text>
       <Text>For Doctor {user}</Text>
       <LineChart
@@ -128,7 +147,7 @@ const PatientDetails = () => {
             },
           ],
         }}
-        width={Dimensions.get("window").width} // from react-native
+        width={Dimensions.get("window").width - 50} // from react-native
         height={300}
         yAxisLabel=""
         yAxisSuffix="bpm"
@@ -155,15 +174,34 @@ const PatientDetails = () => {
           borderRadius: 16,
         }}
       />
-      <Pressable onPress={() => getHistory(id)}>
-        <Text>See historical data</Text>
-      </Pressable>
+      <Card style={{ backgroundColor: "lightgray" }}>
+        <Pressable onPress={() => getHistory(id)}>
+          <Text>See historical data</Text>
+        </Pressable>
+      </Card>
+      <Spacer height={20}></Spacer>
+      {toggleHistory && (
+        <FlatList
+          data={history}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <Card>
+              <Text>
+                {item.created_at} {item.unit.toUpperCase()} {item.value}
+              </Text>
+            </Card>
+          )}
+        />
+      )}
     </View>
   );
 };
 export default PatientDetails;
+
 const styles = StyleSheet.create({
   container: {
+    height: "100%",
+    alignContent: "center",
     flex: 1,
     backgroundColor: "white",
     justifyContent: "center",

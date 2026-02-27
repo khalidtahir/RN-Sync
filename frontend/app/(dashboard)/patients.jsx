@@ -21,7 +21,7 @@ const Patients = () => {
     console.log("Querying patients!");
 
     axios
-      .get(`http://192.168.2.218:5000/api/patients`)
+      .get(`http://172.20.10.4:5000/api/patients`)
       .then((response) => {
         setData(response.data.data);
         console.log(response.data);
