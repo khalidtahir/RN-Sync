@@ -117,9 +117,7 @@ const PatientDetails = () => {
     console.log("Querying patients history!");
 
     axios
-      .get(
-        `http://172.20.10.4:5000/api/patients/${id}/history?metric=heart_rate`,
-      )
+      .get(`http://10.216.219.27:5000/api/patients/${id}/history`)
       .then((response) => {
         setHistory(response.data.data);
         setToggleHistory(true);
