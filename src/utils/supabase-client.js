@@ -75,4 +75,40 @@ export class SupabaseClient {
 
         return await response.json();
     }
+
+    /**
+     * Updates rows in a Supabase table matching the given filters.
+     * @param {string} table - The table name.
+     * @param {Object} filters - Equality filters to identify rows (e.g. { id: '...' }).
+     * @param {Object} data - The fields to update.
+     * @returns {Promise<Array>} The updated rows.
+     */
+    async update(table, filters, data) {
+        if (!this.url || !this.key) {
+            throw new Error("Missing Supabase configuration");
+        }
+
+        let queryUrl = `${this.url}/rest/v1/${table}?`;
+        for (const [key, value] of Object.entries(filters)) {
+            queryUrl += `${key}=eq.${value}&`;
+        }
+
+        const response = await fetch(queryUrl, {
+            method: 'PATCH',
+            headers: {
+                'apikey': this.key,
+                'Authorization': `Bearer ${this.key}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=representation'
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`Supabase error: ${response.status} ${text}`);
+        }
+
+        return await response.json();
+    }
 }

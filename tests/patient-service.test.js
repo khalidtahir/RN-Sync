@@ -2,11 +2,13 @@ import { jest } from '@jest/globals';
 
 const mockSelect = jest.fn();
 const mockInsert = jest.fn();
+const mockUpdate = jest.fn();
 
 jest.unstable_mockModule('../src/utils/supabase-client.js', () => ({
     SupabaseClient: jest.fn().mockImplementation(() => ({
         select: mockSelect,
-        insert: mockInsert
+        insert: mockInsert,
+        update: mockUpdate
     }))
 }));
 
@@ -18,6 +20,7 @@ describe('PatientService', () => {
     beforeEach(() => {
         mockSelect.mockClear();
         mockInsert.mockClear();
+        mockUpdate.mockClear();
         service = new PatientService();
     });
 
@@ -120,5 +123,71 @@ describe('PatientService', () => {
         const response = await service.addReading('missing', { metric: 'hr', value: 90 });
 
         expect(response.statusCode).toBe(404);
+    });
+
+    test('updatePatient assigns a doctor_id', async () => {
+        mockSelect
+            .mockResolvedValueOnce([{ id: 'p1', name: 'John', bed: 'ICU-1' }]) // patient exists
+            .mockResolvedValueOnce([{ id: 'd1', name: 'Dr. Smith' }]);          // doctor exists
+        mockUpdate.mockResolvedValue([{ id: 'p1', name: 'John', bed: 'ICU-1', doctor_id: 'd1' }]);
+
+        const response = await service.updatePatient('p1', { doctor_id: 'd1' });
+
+        expect(mockSelect).toHaveBeenNthCalledWith(1, 'patients', { filters: { id: 'p1' } });
+        expect(mockSelect).toHaveBeenNthCalledWith(2, 'doctors', { filters: { id: 'd1' } });
+        expect(mockUpdate).toHaveBeenCalledWith('patients', { id: 'p1' }, { doctor_id: 'd1' });
+        expect(response.success).toBe(true);
+        expect(response.data.doctor_id).toBe('d1');
+    });
+
+    test('updatePatient clears doctor_id when set to null', async () => {
+        mockSelect.mockResolvedValueOnce([{ id: 'p1', name: 'John', bed: 'ICU-1', doctor_id: 'd1' }]);
+        mockUpdate.mockResolvedValue([{ id: 'p1', name: 'John', bed: 'ICU-1', doctor_id: null }]);
+
+        const response = await service.updatePatient('p1', { doctor_id: null });
+
+        expect(mockUpdate).toHaveBeenCalledWith('patients', { id: 'p1' }, { doctor_id: null });
+        expect(response.success).toBe(true);
+        expect(response.data.doctor_id).toBeNull();
+    });
+
+    test('updatePatient returns 404 when patient not found', async () => {
+        mockSelect.mockResolvedValueOnce([]);
+
+        const response = await service.updatePatient('missing', { doctor_id: 'd1' });
+
+        expect(response.statusCode).toBe(404);
+        expect(mockUpdate).not.toHaveBeenCalled();
+    });
+
+    test('updatePatient returns 404 when doctor_id does not exist', async () => {
+        mockSelect
+            .mockResolvedValueOnce([{ id: 'p1' }]) // patient found
+            .mockResolvedValueOnce([]);              // doctor not found
+
+        const response = await service.updatePatient('p1', { doctor_id: 'bad-doctor-id' });
+
+        expect(response.statusCode).toBe(404);
+        expect(response.message).toBe('Doctor not found');
+        expect(mockUpdate).not.toHaveBeenCalled();
+    });
+
+    test('updatePatient returns 400 when no valid fields provided', async () => {
+        mockSelect.mockResolvedValueOnce([{ id: 'p1' }]);
+
+        const response = await service.updatePatient('p1', { unknown_field: 'x' });
+
+        expect(response.statusCode).toBe(400);
+        expect(mockUpdate).not.toHaveBeenCalled();
+    });
+
+    test('updatePatient can update name and bed', async () => {
+        mockSelect.mockResolvedValueOnce([{ id: 'p1', name: 'Old Name', bed: 'ICU-1' }]);
+        mockUpdate.mockResolvedValue([{ id: 'p1', name: 'New Name', bed: 'ICU-5', doctor_id: null }]);
+
+        const response = await service.updatePatient('p1', { name: 'New Name', bed: 'ICU-5' });
+
+        expect(mockUpdate).toHaveBeenCalledWith('patients', { id: 'p1' }, { name: 'New Name', bed: 'ICU-5' });
+        expect(response.success).toBe(true);
     });
 });

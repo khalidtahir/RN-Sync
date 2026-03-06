@@ -4,12 +4,15 @@ const mockGetHealth = jest.fn();
 const mockGetAllPatients = jest.fn();
 const mockCreatePatient = jest.fn();
 const mockGetPatientById = jest.fn();
+const mockUpdatePatient = jest.fn();
 const mockGetPatientHistory = jest.fn();
 const mockAddReading = jest.fn();
 const mockGetPatientFiles = jest.fn();
 const mockAddFile = jest.fn();
 const mockGetFileById = jest.fn();
 const mockDeleteFile = jest.fn();
+const mockGetAllDoctors = jest.fn();
+const mockGetDoctorById = jest.fn();
 
 jest.unstable_mockModule('../src/services/api-service.js', () => ({
     ApiService: jest.fn().mockImplementation(() => ({
@@ -22,6 +25,7 @@ jest.unstable_mockModule('../src/services/patient-service.js', () => ({
         getAllPatients: mockGetAllPatients,
         createPatient: mockCreatePatient,
         getPatientById: mockGetPatientById,
+        updatePatient: mockUpdatePatient,
         getPatientHistory: mockGetPatientHistory,
         addReading: mockAddReading
     }))
@@ -33,6 +37,13 @@ jest.unstable_mockModule('../src/services/file-service.js', () => ({
         addFile: mockAddFile,
         getFileById: mockGetFileById,
         deleteFile: mockDeleteFile
+    }))
+}));
+
+jest.unstable_mockModule('../src/services/doctor-service.js', () => ({
+    DoctorService: jest.fn().mockImplementation(() => ({
+        getAllDoctors: mockGetAllDoctors,
+        getDoctorById: mockGetDoctorById
     }))
 }));
 
@@ -158,6 +169,66 @@ describe('API Handler', () => {
 
         expect(mockDeleteFile).toHaveBeenCalledWith('file-123');
         expect(deleteResponse.statusCode).toBe(200);
+    });
+
+    test('routes PUT /patients/{id} to updatePatient', async () => {
+        const updatedPatient = { id: 'p1', name: 'John', bed: 'ICU-1', doctor_id: 'd1' };
+        mockUpdatePatient.mockResolvedValue({ success: true, data: updatedPatient });
+
+        const body = { doctor_id: 'd1' };
+        const response = await invoke({
+            path: '/patients/p1',
+            httpMethod: 'PUT',
+            body: JSON.stringify(body)
+        });
+
+        expect(mockUpdatePatient).toHaveBeenCalledWith('p1', body);
+        expect(response.statusCode).toBe(200);
+        const parsed = JSON.parse(response.body);
+        expect(parsed.success).toBe(true);
+        expect(parsed.data.doctor_id).toBe('d1');
+    });
+
+    test('PUT /patients/{id} returns 404 when patient not found', async () => {
+        mockUpdatePatient.mockResolvedValue({ success: false, message: 'Patient not found', statusCode: 404 });
+
+        const response = await invoke({
+            path: '/patients/missing-id',
+            httpMethod: 'PUT',
+            body: JSON.stringify({ doctor_id: 'd1' })
+        });
+
+        expect(response.statusCode).toBe(404);
+    });
+
+    test('routes GET /doctors to getAllDoctors', async () => {
+        const doctors = [{ id: 'd1', name: 'Dr. Smith', email: 'smith@h.com' }];
+        mockGetAllDoctors.mockResolvedValue({ success: true, count: 1, data: doctors });
+
+        const response = await invoke({ path: '/doctors', httpMethod: 'GET' });
+
+        expect(mockGetAllDoctors).toHaveBeenCalledTimes(1);
+        expect(response.statusCode).toBe(200);
+        const parsed = JSON.parse(response.body);
+        expect(parsed.data).toHaveLength(1);
+        expect(parsed.data[0].name).toBe('Dr. Smith');
+    });
+
+    test('routes GET /doctors/{id} to getDoctorById', async () => {
+        mockGetDoctorById.mockResolvedValue({ success: true, data: { id: 'd1', name: 'Dr. Smith' } });
+
+        const response = await invoke({ path: '/doctors/d1', httpMethod: 'GET' });
+
+        expect(mockGetDoctorById).toHaveBeenCalledWith('d1');
+        expect(response.statusCode).toBe(200);
+    });
+
+    test('GET /doctors/{id} returns 404 for unknown doctor', async () => {
+        mockGetDoctorById.mockResolvedValue({ success: false, message: 'Doctor not found', statusCode: 404 });
+
+        const response = await invoke({ path: '/doctors/unknown', httpMethod: 'GET' });
+
+        expect(response.statusCode).toBe(404);
     });
 });
 

@@ -5,10 +5,12 @@
 import { ApiService } from '../services/api-service.js';
 import { PatientService } from '../services/patient-service.js';
 import { FileService } from '../services/file-service.js';
+import { DoctorService } from '../services/doctor-service.js';
 
 const apiService = new ApiService();
 const patientService = new PatientService();
 const fileService = new FileService();
+const doctorService = new DoctorService();
 
 export const handler = async (event) => {
     console.log('API Handler received event:', JSON.stringify(event, null, 2));
@@ -69,6 +71,9 @@ export const handler = async (event) => {
             if (httpMethod === 'GET') {
                 const response = await patientService.getPatientById(id);
                 result = { statusCode: response.statusCode || 200, body: response };
+            } else if (httpMethod === 'PUT') {
+                const response = await patientService.updatePatient(id, parsedBody);
+                result = { statusCode: response.statusCode || 200, body: response };
             }
         }
         // /patients/{id}/history
@@ -98,6 +103,22 @@ export const handler = async (event) => {
                 result = { statusCode: response.statusCode || 201, body: response };
             }
         }
+        // 3. Doctors
+        else if (path === '/doctors') {
+            if (httpMethod === 'GET') {
+                const response = await doctorService.getAllDoctors();
+                result = { statusCode: response.statusCode || 200, body: response };
+            }
+        }
+        // /doctors/{id}
+        else if (path.match(/^\/doctors\/[\w-]+$/)) {
+            const id = path.split('/')[2];
+            if (httpMethod === 'GET') {
+                const response = await doctorService.getDoctorById(id);
+                result = { statusCode: response.statusCode || 200, body: response };
+            }
+        }
+
         // /files/{id}
         else if (path.match(/^\/files\/[\w-]+$/)) {
             const id = path.split('/')[2];
