@@ -2,12 +2,22 @@
 DROP TABLE IF EXISTS files CASCADE;
 DROP TABLE IF EXISTS readings CASCADE;
 DROP TABLE IF EXISTS patients CASCADE;
+DROP TABLE IF EXISTS doctors CASCADE;
+
+-- DOCTORS table
+CREATE TABLE doctors (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
 
 -- PATIENTS table
 CREATE TABLE patients (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
   bed TEXT NOT NULL,
+  doctor_id UUID REFERENCES doctors(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 

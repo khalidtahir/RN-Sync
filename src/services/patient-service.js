@@ -92,6 +92,41 @@ export class PatientService {
         };
     }
 
+    async updatePatient(id, data) {
+        const patients = await this.supabase.select('patients', { filters: { id: id } });
+        if (!patients || patients.length === 0) {
+            return { success: false, message: 'Patient not found', statusCode: 404 };
+        }
+
+        const allowedFields = ['name', 'bed', 'doctor_id'];
+        const updateData = {};
+        for (const field of allowedFields) {
+            if (field in data) {
+                updateData[field] = data[field];
+            }
+        }
+
+        if (Object.keys(updateData).length === 0) {
+            return { success: false, message: 'No valid fields to update. Allowed: name, bed, doctor_id', statusCode: 400 };
+        }
+
+        // If assigning a doctor, verify that doctor exists
+        if (updateData.doctor_id !== undefined && updateData.doctor_id !== null) {
+            const doctors = await this.supabase.select('doctors', { filters: { id: updateData.doctor_id } });
+            if (!doctors || doctors.length === 0) {
+                return { success: false, message: 'Doctor not found', statusCode: 404 };
+            }
+        }
+
+        const updated = await this.supabase.update('patients', { id: id }, updateData);
+
+        return {
+            success: true,
+            message: 'Patient updated successfully',
+            data: updated[0]
+        };
+    }
+
     async addReading(id, data) {
         if (!data.metric || data.value === undefined) {
             return { success: false, message: 'Metric and value are required', statusCode: 400 };
