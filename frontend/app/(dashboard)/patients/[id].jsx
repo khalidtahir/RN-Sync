@@ -224,31 +224,37 @@ const PatientDetails = () => {
               },
             ],
           }}
-          width={Dimensions.get("window").width - 50}
+          width={Dimensions.get("window").width - 32}
           height={250}
           yAxisLabel=""
           yAxisSuffix={unit ? ` ${unit}` : ""}
           yAxisInterval={1}
           chartConfig={{
-            backgroundColor: "#e26a00",
-            backgroundGradientFrom: "#fb8c00",
-            backgroundGradientTo: "#ffa726",
+            backgroundColor: "white",
+            backgroundGradientFrom: "#f8f9fa",
+            backgroundGradientTo: "#ffffff",
             decimalPlaces: 0,
-            color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-            labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+            color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
+            labelColor: (opacity = 1) => `rgba(102, 102, 102, ${opacity})`,
             style: {
-              borderRadius: 16,
+              borderRadius: 12,
             },
             propsForDots: {
-              r: "6",
+              r: "5",
               strokeWidth: "2",
-              stroke: "#ffa726",
+              stroke: "#007AFF",
             },
           }}
           bezier
           style={{
-            marginVertical: 8,
-            borderRadius: 16,
+            marginVertical: 12,
+            borderRadius: 12,
+            backgroundColor: "white",
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.05,
+            shadowRadius: 4,
+            elevation: 2,
           }}
         />
       </View>
@@ -261,52 +267,78 @@ const PatientDetails = () => {
         ...styles.container,
         paddingTop: insets.top,
         paddingBottom: insets.bottom,
-        paddingLeft: insets.left + 16,
-        paddingRight: insets.right + 16,
+        paddingLeft: insets.left,
+        paddingRight: insets.right,
       }}
     >
       {data[0] && (
         <View style={{ flex: 1, width: "100%" }}>
-          <Text style={styles.welcome}>Patient Details for {name}</Text>
-          <Text>For Doctor {user}</Text>
+          {/* Header */}
+          <View style={styles.header}>
+            <Pressable onPress={() => router.back()}>
+              <Text style={styles.backButton}>← Back</Text>
+            </Pressable>
+            <View>
+              <Text style={styles.patientName}>{name}</Text>
+              <Text style={styles.doctorInfo}>Dr. {user}</Text>
+            </View>
+          </View>
 
           {/* Scrollable container for metric charts */}
           <ScrollView
-            style={{ flex: 1, marginVertical: 12, marginHorizontal: 0 }}
+            style={{ flex: 1 }}
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
           >
             {/* Dynamically render charts for each detected metric */}
             {Array.from(detectedMetrics).map((metric) =>
               renderMetricChart(metric),
             )}
-          </ScrollView>
 
-          <View style={{ alignItems: "center", marginVertical: 12 }}>
-            <Card style={{ backgroundColor: "lightgray", width: "60%" }}>
+            {/* History Button */}
+            <View style={styles.historyButtonContainer}>
               <Pressable
+                style={({ pressed }) => [
+                  styles.historyButton,
+                  pressed && styles.historyButtonPressed,
+                ]}
                 onPress={() => getHistory(id)}
-                style={{ paddingHorizontal: 12 }}
               >
-                <Text style={{ textAlign: "center" }}>
+                <Text style={styles.historyButtonText}>
                   {toggleHistory
-                    ? "Hide historical data"
-                    : "See historical data"}
+                    ? "Hide Historical Data"
+                    : "View Historical Data"}
                 </Text>
               </Pressable>
-            </Card>
-          </View>
-          {toggleHistory && history.length > 0 && (
-            <FlatList
-              data={computeHourlySummaries(history)}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => (
-                <Card>
-                  <Text>
-                    {item.hour} - {item.metric}: {item.average} {item.unit}
-                  </Text>
-                </Card>
-              )}
-            />
-          )}
+            </View>
+
+            {/* Historical Data */}
+            {toggleHistory && history.length > 0 && (
+              <View style={styles.historySection}>
+                <Text style={styles.historyTitle}>Historical Summary</Text>
+                <FlatList
+                  data={computeHourlySummaries(history)}
+                  keyExtractor={(item) => item.id}
+                  scrollEnabled={false}
+                  renderItem={({ item }) => (
+                    <View style={styles.historyCard}>
+                      <View>
+                        <Text style={styles.historyMetricName}>
+                          {item.metric}
+                        </Text>
+                        <Text style={styles.historyTime}>{item.hour}</Text>
+                      </View>
+                      <View style={styles.historyValue}>
+                        <Text style={styles.historyAverage}>
+                          {item.average} {item.unit}
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+                />
+              </View>
+            )}
+          </ScrollView>
         </View>
       )}
     </View>
@@ -317,20 +349,107 @@ export default PatientDetails;
 const styles = StyleSheet.create({
   container: {
     height: "100%",
-    alignContent: "center",
     flex: 1,
-    backgroundColor: "white",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "#f5f5f5",
   },
-  welcome: {
-    fontSize: 20,
+  header: {
+    backgroundColor: "white",
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e0e0e0",
+  },
+  backButton: {
+    fontSize: 15,
+    color: "#007AFF",
+    fontWeight: "600",
     marginBottom: 8,
+  },
+  patientName: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  doctorInfo: {
+    fontSize: 13,
+    color: "#999",
+    marginTop: 4,
+    fontWeight: "500",
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 24,
   },
   metricTitle: {
-    fontSize: 16,
+    fontSize: 17,
+    fontWeight: "bold",
+    color: "#333",
+    marginTop: 20,
+    marginBottom: 12,
+    paddingHorizontal: 2,
+  },
+  historyButtonContainer: {
+    marginVertical: 28,
+    alignItems: "center",
+  },
+  historyButton: {
+    backgroundColor: "#007AFF",
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 10,
+    width: "80%",
+    alignItems: "center",
+  },
+  historyButtonPressed: {
+    backgroundColor: "#0056B3",
+    opacity: 0.9,
+  },
+  historyButtonText: {
+    color: "white",
+    fontSize: 15,
     fontWeight: "600",
-    marginTop: 16,
+  },
+  historySection: {
+    marginTop: 12,
+  },
+  historyTitle: {
+    fontSize: 17,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 12,
+    paddingHorizontal: 2,
+  },
+  historyCard: {
+    backgroundColor: "white",
+    borderRadius: 10,
+    padding: 12,
     marginBottom: 8,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  historyMetricName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
+  },
+  historyTime: {
+    fontSize: 12,
+    color: "#999",
+    marginTop: 4,
+  },
+  historyValue: {
+    alignItems: "flex-end",
+  },
+  historyAverage: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#007AFF",
   },
 });
