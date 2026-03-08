@@ -5,6 +5,7 @@ import {
   Dimensions,
   Pressable,
   FlatList,
+  ScrollView,
 } from "react-native";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
@@ -126,10 +127,28 @@ const PatientDetails = () => {
   };
 
   const renderMetricChart = (metric) => {
-    const metricData = data
+    const metricReadings = data
       .filter((datum) => datum.metric === metric)
-      .slice(-10)
-      .map((datum) => datum.value);
+      .slice(-10);
+
+    const metricData = metricReadings.map((datum) => datum.value).reverse();
+
+    // Extract and format timestamps for labels (show first and last)
+    const metricLabels = metricReadings
+      .map((datum, index) => {
+        // Only show label for the first and last data points
+        if (index !== 0 && index !== metricReadings.length - 1) {
+          return "";
+        }
+        const date = new Date(datum.created_at);
+        return date.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false,
+        });
+      })
+      .reverse();
 
     // Format metric name for display
     const displayName = metric
@@ -154,7 +173,7 @@ const PatientDetails = () => {
         <Text style={styles.metricTitle}>{displayName}</Text>
         <LineChart
           data={{
-            labels: ["4AM", "5AM", "6AM", "7AM", "8AM", "9AM"],
+            labels: metricLabels.length > 0 ? metricLabels : ["No data"],
             datasets: [
               {
                 data: metricData.length > 0 ? metricData : [0],
@@ -170,7 +189,7 @@ const PatientDetails = () => {
             backgroundColor: "#e26a00",
             backgroundGradientFrom: "#fb8c00",
             backgroundGradientTo: "#ffa726",
-            decimalPlaces: 1,
+            decimalPlaces: 0,
             color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
             labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
             style: {
@@ -198,17 +217,24 @@ const PatientDetails = () => {
         ...styles.container,
         paddingTop: insets.top,
         paddingBottom: insets.bottom,
+        paddingLeft: insets.left + 16,
+        paddingRight: insets.right + 16,
       }}
     >
       {data[0] && (
-        <View>
+        <View style={{ flex: 1, width: "100%" }}>
           <Text style={styles.welcome}>Patient Details for {name}</Text>
           <Text>For Doctor {user}</Text>
 
-          {/* Dynamically render charts for each detected metric */}
-          {Array.from(detectedMetrics).map((metric) =>
-            renderMetricChart(metric),
-          )}
+          {/* Scrollable container for metric charts */}
+          <ScrollView
+            style={{ flex: 1, marginVertical: 12, marginHorizontal: 0 }}
+          >
+            {/* Dynamically render charts for each detected metric */}
+            {Array.from(detectedMetrics).map((metric) =>
+              renderMetricChart(metric),
+            )}
+          </ScrollView>
 
           <Card style={{ backgroundColor: "lightgray" }}>
             <Pressable onPress={() => getHistory(id)}>
@@ -248,6 +274,7 @@ const styles = StyleSheet.create({
   },
   welcome: {
     fontSize: 20,
+    marginBottom: 8,
   },
   metricTitle: {
     fontSize: 16,
