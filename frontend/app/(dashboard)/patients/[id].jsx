@@ -16,139 +16,88 @@ import { useUser } from "../../../hooks/useUser";
 import Card from "../../../components/Card";
 import Spacer from "../../../components/Spacer";
 
-const WS_URL = "wss://dn118dyd65.execute-api.us-east-2.amazonaws.com/dev/";
 const HTTP_URL = "https://vuoog0y6uf.execute-api.us-east-2.amazonaws.com";
-
-function generateHeartRateData() {
-  const heartRate = Math.floor(Math.random() * (100 - 60 + 1)) + 60;
-  return {
-    bpm: heartRate,
-    timestamp: new Date().toISOString(),
-  };
-}
-
-function generateTemperatureData() {
-  const heartRate = Math.floor(Math.random() * (100 - 60 + 1)) + 60;
-  return {
-    temp: heartRate,
-    timestamp: new Date().toISOString(),
-  };
-}
 
 const PatientDetails = () => {
   const { id, name } = useLocalSearchParams();
   const { user, token } = useUser();
 
   const [data, setData] = useState([]);
-  const [metrics, setMetrics] = useState(["heart_rate"]);
+  const [detectedMetrics, setDetectedMetrics] = useState(new Set());
+  const [lastReadingTime, setLastReadingTime] = useState(null);
   const [history, setHistory] = useState([]);
   const [toggleHistory, setToggleHistory] = useState(false);
 
   const insets = useSafeAreaInsets();
-
-  // webSocket connection
-  useFocusEffect(
-    useCallback(() => {
-      // 1. Get Token
-      // Don't connect if token isn't available yet
-      if (!token) {
-        console.log("Waiting for authentication token...");
-        return;
-      }
-
-      // 1. Get Token
-      console.log("Token available, length:", token.length);
-
-      // 2. Connect with Token
-      const secureUrl = `${WS_URL}?token=${token}`;
-      console.log(`Connecting to WebSocket...`);
-
-      const ws = new WebSocket(secureUrl);
-
-      ws.onopen = () => {
-        console.log("Connected! Starting data stream...");
-
-        // Send data every 1 second
-        const intervalId = setInterval(() => {
-          let data = generateHeartRateData();
-          // Match the format expected by websocket-handler (ingest route)
-          let message = {
-            action: "ingest",
-            patientId: id, // Use the patient ID from the route
-            metric: "heart_rate",
-            value: data.bpm,
-            unit: "bpm",
-            timestamp: new Date().toISOString(),
-          };
-
-          ws.send(JSON.stringify(message));
-          console.log("Sent:", message);
-
-          // data = generateTemperatureData();
-          // // Match the format expected by websocket-handler (ingest route)
-          // message = {
-          //   action: "ingest",
-          //   patientId: id, // Use the patient ID from the route
-          //   metric: "temperature",
-          //   value: data.temp,
-          //   unit: "degrees",
-          //   timestamp: new Date().toISOString(),
-          // };
-
-          // ws.send(JSON.stringify(message));
-          // console.log("Sent:", message);
-        }, 1000);
-
-        // Store intervalId for cleanup
-        ws.intervalId = intervalId;
-      };
-
-      ws.onclose = () => {
-        console.log("Disconnected.");
-      };
-
-      // ws.onerror = (err) => {
-      //   console.error("Connection error:", err.message);
-      // };
-
-      // Clean up the WebSocket connection when the component unmounts
-      return () => {
-        if (ws.intervalId) {
-          clearInterval(ws.intervalId);
-        }
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.close();
-        }
-      };
-    }, [token, id]),
-  );
 
   useFocusEffect(
     useCallback(() => {
       console.log("Querying current patient data");
 
       setData([]);
+      setDetectedMetrics(new Set());
+      setLastReadingTime(null);
       setToggleHistory(false);
 
+      // Initial fetch of patient data
       axios
         .get(`${HTTP_URL}/patients/${id}`)
         .then((response) => {
-          setData(response.data.data.latest_readings);
+          const readings = response.data.data.latest_readings;
+          setData(readings);
+          // Set last reading time to the timestamp of the most recent reading
+          if (readings.length > 0) {
+            setLastReadingTime(readings[readings.length - 1].created_at);
+          }
+          // Detect metrics from initial readings
+          const newMetrics = new Set();
+          readings.forEach((reading) => {
+            if (reading.metric) {
+              newMetrics.add(reading.metric);
+            }
+          });
+          setDetectedMetrics(newMetrics);
           console.log(response.data);
         })
-        .catch((error) => console.error("couldn't be done champ", error));
+        .catch((error) =>
+          console.error("Error fetching patient data: ", error),
+        );
 
+      // Set up interval to fetch latest patient data every second
       const intervalID = setInterval(() => {
-        console.log("Querying!!!");
+        console.log("Querying current patient data");
 
         axios
           .get(`${HTTP_URL}/patients/${id}`)
           .then((response) => {
             const readings = response.data.data.latest_readings;
-            setData((prevData) => [...prevData, readings[0]]);
+            // Filter to only new readings since last fetch
+            const newReadings = readings.filter((reading) => {
+              if (!lastReadingTime) return false; // Skip if we haven't initialized
+              return new Date(reading.created_at) > new Date(lastReadingTime);
+            });
+            if (newReadings.length > 0) {
+              setData((prevData) => [...prevData, ...newReadings]);
+              // Update last reading time to the most recent new reading
+              setLastReadingTime(
+                newReadings[newReadings.length - 1].created_at,
+              );
+              // Detect new metrics
+              setDetectedMetrics((prevMetrics) => {
+                const newMetrics = new Set(prevMetrics);
+                newReadings.forEach((reading) => {
+                  if (reading && reading.metric) {
+                    newMetrics.add(reading.metric);
+                  }
+                });
+                return newMetrics;
+              });
+            }
             console.log(readings);
           })
-          .catch((error) => console.error("couldn't be done champ", error));
+          .catch((error) =>
+            console.error("Error fetching patient data: ", error),
+          );
       }, 1000);
 
       return () => {
@@ -158,7 +107,7 @@ const PatientDetails = () => {
   );
 
   const getHistory = (id) => {
-    console.log("Querying patients history!");
+    console.log("Querying patient's history");
 
     if (toggleHistory == false) {
       axios
@@ -168,10 +117,79 @@ const PatientDetails = () => {
           setToggleHistory((toggleHistory) => !toggleHistory);
           // console.log(response.data);
         })
-        .catch((error) => console.error("couldn't be done champ", error));
+        .catch((error) =>
+          console.error("Error fetching patient history: ", error),
+        );
     } else {
       setToggleHistory(false);
     }
+  };
+
+  const renderMetricChart = (metric) => {
+    const metricData = data
+      .filter((datum) => datum.metric === metric)
+      .slice(-10)
+      .map((datum) => datum.value);
+
+    // Format metric name for display
+    const displayName = metric
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+
+    // Determine unit based on metric type
+    const unitMap = {
+      heart_rate: "bpm",
+      temperature: "°F",
+      oxygen_saturation: "%",
+      blood_pressure_systolic: "mmHg",
+      blood_pressure_diastolic: "mmHg",
+      respiratory_rate: "breaths/min",
+    };
+
+    const unit = unitMap[metric] || "";
+
+    return (
+      <View key={metric}>
+        <Text style={styles.metricTitle}>{displayName}</Text>
+        <LineChart
+          data={{
+            labels: ["4AM", "5AM", "6AM", "7AM", "8AM", "9AM"],
+            datasets: [
+              {
+                data: metricData.length > 0 ? metricData : [0],
+              },
+            ],
+          }}
+          width={Dimensions.get("window").width - 50}
+          height={250}
+          yAxisLabel=""
+          yAxisSuffix={unit ? ` ${unit}` : ""}
+          yAxisInterval={1}
+          chartConfig={{
+            backgroundColor: "#e26a00",
+            backgroundGradientFrom: "#fb8c00",
+            backgroundGradientTo: "#ffa726",
+            decimalPlaces: 1,
+            color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+            labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+            style: {
+              borderRadius: 16,
+            },
+            propsForDots: {
+              r: "6",
+              strokeWidth: "2",
+              stroke: "#ffa726",
+            },
+          }}
+          bezier
+          style={{
+            marginVertical: 8,
+            borderRadius: 16,
+          }}
+        />
+      </View>
+    );
   };
 
   return (
@@ -187,87 +205,10 @@ const PatientDetails = () => {
           <Text style={styles.welcome}>Patient Details for {name}</Text>
           <Text>For Doctor {user}</Text>
 
-          <Text>Heart Rate</Text>
-          <LineChart
-            data={{
-              labels: ["4AM", "5AM", "6AM", "7AM", "8AM", "9AM"],
-              datasets: [
-                {
-                  data: data
-                    .filter((datum) => datum.metric == "heart_rate")
-                    .slice(-10)
-                    .map((data) => data.value),
-                },
-              ],
-            }}
-            width={Dimensions.get("window").width - 50} // from react-native
-            height={300}
-            yAxisLabel=""
-            yAxisSuffix="bpm"
-            yAxisInterval={1} // optional, defaults to 1
-            chartConfig={{
-              backgroundColor: "#e26a00",
-              backgroundGradientFrom: "#fb8c00",
-              backgroundGradientTo: "#ffa726",
-              decimalPlaces: 0, // optional, defaults to 2dp
-              color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-              labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-              style: {
-                borderRadius: 16,
-              },
-              propsForDots: {
-                r: "6",
-                strokeWidth: "2",
-                stroke: "#ffa726",
-              },
-            }}
-            bezier
-            style={{
-              marginVertical: 8,
-              borderRadius: 16,
-            }}
-          />
-
-          {/* <Text>Temperature (F)</Text>
-          <LineChart
-            data={{
-              labels: ["4AM", "5AM", "6AM", "7AM", "8AM", "9AM"],
-              datasets: [
-                {
-                  data: data
-                    .filter((datum) => datum.metric == "temperature")
-                    .slice(-10)
-                    .map((data) => data.value),
-                },
-              ],
-            }}
-            width={Dimensions.get("window").width - 50} // from react-native
-            height={300}
-            yAxisLabel=""
-            yAxisSuffix="bpm"
-            yAxisInterval={1} // optional, defaults to 1
-            chartConfig={{
-              backgroundColor: "#e26a00",
-              backgroundGradientFrom: "#fb8c00",
-              backgroundGradientTo: "#ffa726",
-              decimalPlaces: 0, // optional, defaults to 2dp
-              color: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-              labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-              style: {
-                borderRadius: 16,
-              },
-              propsForDots: {
-                r: "6",
-                strokeWidth: "2",
-                stroke: "#ffa726",
-              },
-            }}
-            bezier
-            style={{
-              marginVertical: 8,
-              borderRadius: 16,
-            }}
-          /> */}
+          {/* Dynamically render charts for each detected metric */}
+          {Array.from(detectedMetrics).map((metric) =>
+            renderMetricChart(metric),
+          )}
 
           <Card style={{ backgroundColor: "lightgray" }}>
             <Pressable onPress={() => getHistory(id)}>
@@ -307,5 +248,11 @@ const styles = StyleSheet.create({
   },
   welcome: {
     fontSize: 20,
+  },
+  metricTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginTop: 16,
+    marginBottom: 8,
   },
 });

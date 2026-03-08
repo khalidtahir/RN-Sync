@@ -7,3 +7,8 @@ TODO:
 - Visual issues with historical data
 - Sign out
 - Test streaming from multiple devices
+- Profile page
+- Files?
+- See most recent metric on Patient component
+- Graph styling
+- Separate sample data production from frontend

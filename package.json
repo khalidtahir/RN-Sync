@@ -12,9 +12,10 @@
     "license": "ISC",
     "dependencies": {
         "@aws-sdk/client-cognito-identity-provider": "^3.0.0",
-        "axios": "^1.13.5",
+        "axios": "^1.13.6",
         "react-native-chart-kit": "^6.12.0",
         "react-native-get-random-values": "^2.0.0",
+        "socket.io-client": "^4.8.3",
         "ws": "^8.0.0"
     },
     "devDependencies": {

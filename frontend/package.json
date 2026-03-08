@@ -2,7 +2,7 @@
   "name": "rn_sync",
   "version": "1.0.0",
   "main": "expo-router/entry",
-  "proxy": "http://10.216.219.27:5000",
+  "proxy": "http://192.168.2.218:5000",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
