@@ -107,6 +107,50 @@ const PatientDetails = () => {
     }, [id]),
   );
 
+  const computeHourlySummaries = (historyData) => {
+    // Group data by hour and metric
+    const hourlyData = {};
+
+    historyData.forEach((item) => {
+      const date = new Date(item.created_at);
+      const hour = date.toISOString().slice(0, 13) + ":00"; // Format: YYYY-MM-DDTHH:00
+      const key = `${hour}|${item.metric}`;
+
+      if (!hourlyData[key]) {
+        hourlyData[key] = {
+          hour,
+          metric: item.metric,
+          values: [],
+          unit: item.unit,
+        };
+      }
+      hourlyData[key].values.push(parseFloat(item.value));
+    });
+
+    // Calculate averages and format for display
+    return Object.values(hourlyData)
+      .map((item) => {
+        const avg = item.values.reduce((a, b) => a + b, 0) / item.values.length;
+        return {
+          id: `${item.hour}|${item.metric}`,
+          hour: new Date(item.hour).toLocaleString([], {
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+          }),
+          metric: item.metric
+            .split("_")
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(" "),
+          average: Math.round(avg * 100) / 100,
+          unit: item.unit,
+        };
+      })
+      .sort((a, b) => new Date(b.hour) - new Date(a.hour)); // Sort by most recent
+  };
+
   const getHistory = (id) => {
     console.log("Querying patient's history");
 
@@ -236,21 +280,28 @@ const PatientDetails = () => {
             )}
           </ScrollView>
 
-          <Card style={{ backgroundColor: "lightgray" }}>
-            <Pressable onPress={() => getHistory(id)}>
-              <Text>See historical data</Text>
-            </Pressable>
-          </Card>
-          <Spacer height={20}></Spacer>
-          {toggleHistory && (
+          <View style={{ alignItems: "center", marginVertical: 12 }}>
+            <Card style={{ backgroundColor: "lightgray", width: "60%" }}>
+              <Pressable
+                onPress={() => getHistory(id)}
+                style={{ paddingHorizontal: 12 }}
+              >
+                <Text style={{ textAlign: "center" }}>
+                  {toggleHistory
+                    ? "Hide historical data"
+                    : "See historical data"}
+                </Text>
+              </Pressable>
+            </Card>
+          </View>
+          {toggleHistory && history.length > 0 && (
             <FlatList
-              data={history}
+              data={computeHourlySummaries(history)}
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
                 <Card>
                   <Text>
-                    {item.created_at.slice(0, 19)} {item.unit.toUpperCase()}{" "}
-                    {item.value}
+                    {item.hour} - {item.metric}: {item.average} {item.unit}
                   </Text>
                 </Card>
               )}

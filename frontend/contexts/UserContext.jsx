@@ -53,8 +53,13 @@ export function UserProvider({ children }) {
     }
   }
 
+  function logout() {
+    setUser(null);
+    setToken(null);
+  }
+
   return (
-    <UserContext.Provider value={{ user, login, token }}>
+    <UserContext.Provider value={{ user, login, logout, token }}>
       {children}
     </UserContext.Provider>
   );
