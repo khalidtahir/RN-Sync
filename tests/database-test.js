@@ -4,9 +4,6 @@
  */
 
 import { SupabaseClient } from '../src/utils/supabase-client.js';
-import fs from 'fs';
-
-const config = JSON.parse(fs.readFileSync('./aws-config.json', 'utf8'));
 
 async function testDatabase() {
     console.log('=================================');

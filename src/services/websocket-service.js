@@ -3,7 +3,6 @@ import { SupabaseClient } from '../utils/supabase-client.js';
 export class WebSocketService {
     constructor() {
         this.supabase = new SupabaseClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
-        this.tableName = process.env.TABLE_NAME || 'readings';
     }
 
     async handleConnect() {

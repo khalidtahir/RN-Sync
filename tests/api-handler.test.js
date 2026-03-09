@@ -13,7 +13,6 @@ const mockGetFileById = jest.fn();
 const mockDeleteFile = jest.fn();
 const mockGetAllDoctors = jest.fn();
 const mockGetDoctorById = jest.fn();
-const mockUpsertDoctor = jest.fn();
 
 jest.unstable_mockModule('../src/services/api-service.js', () => ({
     ApiService: jest.fn().mockImplementation(() => ({
@@ -44,8 +43,7 @@ jest.unstable_mockModule('../src/services/file-service.js', () => ({
 jest.unstable_mockModule('../src/services/doctor-service.js', () => ({
     DoctorService: jest.fn().mockImplementation(() => ({
         getAllDoctors: mockGetAllDoctors,
-        getDoctorById: mockGetDoctorById,
-        upsertDoctor: mockUpsertDoctor
+        getDoctorById: mockGetDoctorById
     }))
 }));
 
