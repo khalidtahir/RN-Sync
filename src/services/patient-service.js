@@ -106,12 +106,25 @@ export class PatientService {
             }
         }
 
-        if (Object.keys(updateData).length === 0) {
-            return { success: false, message: 'No valid fields to update. Allowed: name, bed, doctor_id', statusCode: 400 };
+        // Allow doctor lookup by email as an alternative to UUID
+        if ('doctor_email' in data) {
+            if (data.doctor_email === null) {
+                updateData.doctor_id = null;
+            } else {
+                const byEmail = await this.supabase.select('doctors', { filters: { email: data.doctor_email } });
+                if (!byEmail || byEmail.length === 0) {
+                    return { success: false, message: 'Doctor not found', statusCode: 404 };
+                }
+                updateData.doctor_id = byEmail[0].id;
+            }
         }
 
-        // If assigning a doctor, verify that doctor exists
-        if (updateData.doctor_id !== undefined && updateData.doctor_id !== null) {
+        if (Object.keys(updateData).length === 0) {
+            return { success: false, message: 'No valid fields to update. Allowed: name, bed, doctor_id, doctor_email', statusCode: 400 };
+        }
+
+        // If assigning a doctor by UUID, verify that doctor exists
+        if (updateData.doctor_id !== undefined && updateData.doctor_id !== null && !('doctor_email' in data)) {
             const doctors = await this.supabase.select('doctors', { filters: { id: updateData.doctor_id } });
             if (!doctors || doctors.length === 0) {
                 return { success: false, message: 'Doctor not found', statusCode: 404 };

@@ -190,4 +190,40 @@ describe('PatientService', () => {
         expect(mockUpdate).toHaveBeenCalledWith('patients', { id: 'p1' }, { name: 'New Name', bed: 'ICU-5' });
         expect(response.success).toBe(true);
     });
+
+    test('updatePatient assigns doctor by email', async () => {
+        mockSelect
+            .mockResolvedValueOnce([{ id: 'p1', name: 'John', bed: 'ICU-1' }])
+            .mockResolvedValueOnce([{ id: 'abc-uuid', name: 'Dr. Smith', email: 'smith@hospital.com' }]);
+        mockUpdate.mockResolvedValue([{ id: 'p1', name: 'John', bed: 'ICU-1', doctor_id: 'abc-uuid' }]);
+
+        const response = await service.updatePatient('p1', { doctor_email: 'smith@hospital.com' });
+
+        expect(mockSelect).toHaveBeenNthCalledWith(2, 'doctors', { filters: { email: 'smith@hospital.com' } });
+        expect(mockUpdate).toHaveBeenCalledWith('patients', { id: 'p1' }, { doctor_id: 'abc-uuid' });
+        expect(response.success).toBe(true);
+        expect(response.data.doctor_id).toBe('abc-uuid');
+    });
+
+    test('updatePatient returns 404 when doctor_email does not match any doctor', async () => {
+        mockSelect
+            .mockResolvedValueOnce([{ id: 'p1' }])
+            .mockResolvedValueOnce([]);
+
+        const response = await service.updatePatient('p1', { doctor_email: 'nobody@hospital.com' });
+
+        expect(response.statusCode).toBe(404);
+        expect(response.message).toBe('Doctor not found');
+        expect(mockUpdate).not.toHaveBeenCalled();
+    });
+
+    test('updatePatient clears doctor_id when doctor_email is null', async () => {
+        mockSelect.mockResolvedValueOnce([{ id: 'p1', doctor_id: 'abc-uuid' }]);
+        mockUpdate.mockResolvedValue([{ id: 'p1', doctor_id: null }]);
+
+        const response = await service.updatePatient('p1', { doctor_email: null });
+
+        expect(mockUpdate).toHaveBeenCalledWith('patients', { id: 'p1' }, { doctor_id: null });
+        expect(response.success).toBe(true);
+    });
 });
