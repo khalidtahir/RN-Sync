@@ -90,4 +90,17 @@ describe('FileService', () => {
         expect(response.statusCode).toBe(501);
         expect(response.message).toMatch(/not yet supported/i);
     });
+
+    test('addFile returns 404 when patient does not exist', async () => {
+        mockSelect.mockResolvedValueOnce([]);
+
+        const response = await service.addFile('missing', {
+            file_name: 'scan.jpg',
+            storage_url: 's3://bucket/scan.jpg'
+        });
+
+        expect(response.statusCode).toBe(404);
+        expect(response.message).toBe('Patient not found');
+        expect(mockInsert).not.toHaveBeenCalled();
+    });
 });

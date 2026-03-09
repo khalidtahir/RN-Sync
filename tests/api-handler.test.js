@@ -13,7 +13,6 @@ const mockGetFileById = jest.fn();
 const mockDeleteFile = jest.fn();
 const mockGetAllDoctors = jest.fn();
 const mockGetDoctorById = jest.fn();
-const mockUpsertDoctor = jest.fn();
 
 jest.unstable_mockModule('../src/services/api-service.js', () => ({
     ApiService: jest.fn().mockImplementation(() => ({
@@ -44,8 +43,7 @@ jest.unstable_mockModule('../src/services/file-service.js', () => ({
 jest.unstable_mockModule('../src/services/doctor-service.js', () => ({
     DoctorService: jest.fn().mockImplementation(() => ({
         getAllDoctors: mockGetAllDoctors,
-        getDoctorById: mockGetDoctorById,
-        upsertDoctor: mockUpsertDoctor
+        getDoctorById: mockGetDoctorById
     }))
 }));
 
@@ -232,6 +230,46 @@ describe('API Handler', () => {
         const response = await invoke({ path: '/doctors/unknown', httpMethod: 'GET' });
 
         expect(response.statusCode).toBe(404);
+    });
+
+    test('routes GET /patients/{id} to getPatientById', async () => {
+        const patient = { id: 'p1', name: 'John', bed: 'ICU-1', latest_readings: [] };
+        mockGetPatientById.mockResolvedValue({ success: true, data: patient });
+
+        const response = await invoke({ path: '/patients/p1', httpMethod: 'GET' });
+
+        expect(mockGetPatientById).toHaveBeenCalledWith('p1');
+        expect(response.statusCode).toBe(200);
+        const parsed = JSON.parse(response.body);
+        expect(parsed.data.id).toBe('p1');
+    });
+
+    test('OPTIONS preflight returns 200 with CORS headers', async () => {
+        const response = await invoke({ httpMethod: 'OPTIONS', path: '/patients' });
+
+        expect(response.statusCode).toBe(200);
+        expect(response.body).toBe('');
+        expect(response.headers['Access-Control-Allow-Origin']).toBe('*');
+        expect(response.headers['Access-Control-Allow-Methods']).toContain('OPTIONS');
+    });
+
+    test('unknown route returns 404', async () => {
+        const response = await invoke({ path: '/unknown-path', httpMethod: 'GET' });
+
+        expect(response.statusCode).toBe(404);
+        const parsed = JSON.parse(response.body);
+        expect(parsed.message).toBe('Not Found');
+    });
+
+    test('returns 500 when a service throws', async () => {
+        mockGetAllPatients.mockRejectedValue(new Error('DB connection failed'));
+
+        const response = await invoke({ path: '/patients', httpMethod: 'GET' });
+
+        expect(response.statusCode).toBe(500);
+        const parsed = JSON.parse(response.body);
+        expect(parsed.message).toBe('Internal Server Error');
+        expect(parsed.error).toBe('DB connection failed');
     });
 });
 

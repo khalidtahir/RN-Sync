@@ -16,8 +16,7 @@ export class SupabaseClient {
      */
     async insert(table, data) {
         if (!this.url || !this.key) {
-            console.warn("Supabase credentials not set. Skipping DB save.");
-            return;
+            throw new Error("Missing Supabase configuration");
         }
 
         const response = await fetch(`${this.url}/rest/v1/${table}`, {
@@ -119,10 +118,10 @@ export class SupabaseClient {
             throw new Error("Missing Supabase configuration");
         }
 
-        let queryUrl = `${this.url}/rest/v1/${table}?`;
-        for (const [key, value] of Object.entries(filters)) {
-            queryUrl += `${key}=eq.${value}&`;
-        }
+        const filterParams = Object.entries(filters)
+            .map(([key, value]) => `${key}=eq.${value}`)
+            .join('&');
+        const queryUrl = `${this.url}/rest/v1/${table}?${filterParams}`;
 
         const response = await fetch(queryUrl, {
             method: 'PATCH',

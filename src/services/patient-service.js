@@ -26,7 +26,7 @@ export class PatientService {
         }
         const patient = patients[0];
 
-        // Fetch latest readings (limit 5 for snapshot)
+        // Fetch latest readings (limit 10 for snapshot)
         const readings = await this.supabase.select('readings', {
             filters: { patient_id: id },
             order: 'timestamp.desc',

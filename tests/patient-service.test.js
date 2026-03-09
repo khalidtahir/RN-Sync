@@ -229,4 +229,34 @@ describe('PatientService', () => {
         expect(mockUpdate).toHaveBeenCalledWith('patients', { id: 'p1' }, { doctor_id: null });
         expect(response.success).toBe(true);
     });
+
+    test('getPatientById returns 404 when patient not found', async () => {
+        mockSelect.mockResolvedValueOnce([]);
+
+        const response = await service.getPatientById('missing');
+
+        expect(response.statusCode).toBe(404);
+        expect(response.success).toBe(false);
+        expect(response.message).toBe('Patient not found');
+        expect(mockSelect).toHaveBeenCalledTimes(1);
+    });
+
+    test('getPatientHistory returns all readings when no metric filter provided', async () => {
+        mockSelect
+            .mockResolvedValueOnce([{ id: 'p1' }])
+            .mockResolvedValueOnce([
+                { id: 'r1', metric: 'spo2', value: 98 },
+                { id: 'r2', metric: 'hr', value: 70 }
+            ]);
+
+        const response = await service.getPatientHistory('p1', {});
+
+        expect(mockSelect).toHaveBeenNthCalledWith(2, 'readings', {
+            filters: { patient_id: 'p1' },
+            order: 'timestamp.desc',
+            limit: 100
+        });
+        expect(response.success).toBe(true);
+        expect(response.count).toBe(2);
+    });
 });
