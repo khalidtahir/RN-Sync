@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import {
   StyleSheet,
@@ -6,36 +6,58 @@ import {
   View,
   FlatList,
   ActivityIndicator,
+  Pressable,
 } from "react-native";
+import { router, useFocusEffect } from "expo-router";
 import Patient from "../../components/Patient";
+import { useUser } from "../../hooks/useUser";
 
 const HTTP_URL = "https://vuoog0y6uf.execute-api.us-east-2.amazonaws.com";
 
 const Patients = () => {
+  const { userId } = useUser();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    console.log("Querying patients!");
+  useFocusEffect(
+    useCallback(() => {
+      console.log("Querying patients!");
 
-    axios
-      .get(`${HTTP_URL}/patients`)
-      .then((response) => {
-        setData(response.data.data);
-        console.log(response.data);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error("couldn't be done champ", error);
-        setLoading(false);
-      });
-  }, []);
+      setLoading(true);
+      axios
+        .get(`${HTTP_URL}/patients`)
+        .then((response) => {
+          // Filter patients by doctor_id matching current user's ID
+          const filteredData = response.data.data.filter(
+            (patient) => patient.doctor_id === userId,
+          );
+          setData(filteredData);
+          console.log(response.data);
+          setLoading(false);
+        })
+        .catch((error) => {
+          console.error("couldn't be done champ", error);
+          setLoading(false);
+        });
+    }, [userId]),
+  );
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Patients</Text>
-        <Text style={styles.subtitle}>Recent Admissions</Text>
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.title}>Patients</Text>
+          <Text style={styles.subtitle}>Recent Admissions</Text>
+        </View>
+        <Pressable
+          style={({ pressed }) => [
+            styles.addButton,
+            pressed && styles.addButtonPressed,
+          ]}
+          onPress={() => router.push("/patients/add")}
+        >
+          <Text style={styles.addButtonText}>+ Add Patient</Text>
+        </Pressable>
       </View>
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -43,7 +65,7 @@ const Patients = () => {
         </View>
       ) : data ? (
         <FlatList
-          data={data.slice(-3)}
+          data={data}
           style={styles.patients}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
@@ -73,6 +95,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  headerTitleContainer: {
+    flex: 1,
   },
   title: {
     fontSize: 28,
@@ -84,6 +112,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#999",
     fontWeight: "500",
+  },
+  addButton: {
+    backgroundColor: "#007AFF",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  addButtonPressed: {
+    backgroundColor: "#0056B3",
+    opacity: 0.9,
+  },
+  addButtonText: {
+    color: "white",
+    fontSize: 13,
+    fontWeight: "600",
   },
   list: {
     paddingHorizontal: 12,

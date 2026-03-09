@@ -50,6 +50,8 @@ const DashboardLayout = () => {
         }}
       />
       <Tabs.Screen name="patients/[id]" options={{ href: null }} />
+      <Tabs.Screen name="patients/files/[id]" options={{ href: null }} />
+      <Tabs.Screen name="patients/add" options={{ href: null }} />
     </Tabs>
 
     // </UserOnly>

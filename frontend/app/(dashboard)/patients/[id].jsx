@@ -6,6 +6,8 @@ import {
   Pressable,
   FlatList,
   ScrollView,
+  Alert,
+  ActivityIndicator,
 } from "react-native";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
@@ -26,8 +28,11 @@ const PatientDetails = () => {
   const [data, setData] = useState([]);
   const [detectedMetrics, setDetectedMetrics] = useState(new Set());
   const [lastReadingTime, setLastReadingTime] = useState(null);
+  const [lastMetricUpdate, setLastMetricUpdate] = useState({});
+  const [staleMetrics, setStaleMetrics] = useState(new Set());
   const [history, setHistory] = useState([]);
   const [toggleHistory, setToggleHistory] = useState(false);
+  const [unassigning, setUnassigning] = useState(false);
 
   const insets = useSafeAreaInsets();
 
@@ -38,6 +43,8 @@ const PatientDetails = () => {
       setData([]);
       setDetectedMetrics(new Set());
       setLastReadingTime(null);
+      setLastMetricUpdate({});
+      setStaleMetrics(new Set());
       setToggleHistory(false);
 
       // Initial fetch of patient data
@@ -52,12 +59,17 @@ const PatientDetails = () => {
           }
           // Detect metrics from initial readings
           const newMetrics = new Set();
+          const metricUpdates = {};
+          const now = Date.now();
           readings.forEach((reading) => {
             if (reading.metric) {
               newMetrics.add(reading.metric);
+              metricUpdates[reading.metric] = now;
             }
           });
           setDetectedMetrics(newMetrics);
+          setLastMetricUpdate(metricUpdates);
+          setStaleMetrics(new Set());
           console.log(response.data);
         })
         .catch((error) =>
@@ -83,6 +95,17 @@ const PatientDetails = () => {
               setLastReadingTime(
                 newReadings[newReadings.length - 1].created_at,
               );
+              // Update metric timestamps and detect new metrics
+              const now = Date.now();
+              setLastMetricUpdate((prevUpdates) => {
+                const updatedMetrics = { ...prevUpdates };
+                newReadings.forEach((reading) => {
+                  if (reading && reading.metric) {
+                    updatedMetrics[reading.metric] = now;
+                  }
+                });
+                return updatedMetrics;
+              });
               // Detect new metrics
               setDetectedMetrics((prevMetrics) => {
                 const newMetrics = new Set(prevMetrics);
@@ -93,6 +116,8 @@ const PatientDetails = () => {
                 });
                 return newMetrics;
               });
+              // Clear stale metrics when new data arrives
+              setStaleMetrics(new Set());
             }
             console.log(readings);
           })
@@ -106,6 +131,27 @@ const PatientDetails = () => {
       };
     }, [id]),
   );
+
+  // Check for stale metrics every 500ms
+  useEffect(() => {
+    const staleCheckInterval = setInterval(() => {
+      setStaleMetrics((prevStale) => {
+        const now = Date.now();
+        const newStale = new Set();
+
+        detectedMetrics.forEach((metric) => {
+          const lastUpdate = lastMetricUpdate[metric];
+          if (lastUpdate && now - lastUpdate > 3000) {
+            newStale.add(metric);
+          }
+        });
+
+        return newStale;
+      });
+    }, 500);
+
+    return () => clearInterval(staleCheckInterval);
+  }, [detectedMetrics, lastMetricUpdate]);
 
   const computeHourlySummaries = (historyData) => {
     // Group data by hour and metric
@@ -170,6 +216,62 @@ const PatientDetails = () => {
     }
   };
 
+  const handleUnassignPatient = async () => {
+    Alert.alert(
+      "Unassign Patient",
+      `Are you sure you want to unassign ${name} from your account?`,
+      [
+        {
+          text: "Cancel",
+          onPress: () => {},
+          style: "cancel",
+        },
+        {
+          text: "Unassign",
+          onPress: async () => {
+            try {
+              setUnassigning(true);
+              await axios.put(`${HTTP_URL}/patients/${id}`, {
+                doctor_email: "",
+              });
+              setUnassigning(false);
+              Alert.alert("Success", "Patient unassigned successfully", [
+                {
+                  text: "OK",
+                  onPress: () => {
+                    router.push("/patients");
+                  },
+                },
+              ]);
+            } catch (error) {
+              console.error("Error unassigning patient: ", error);
+              setUnassigning(false);
+              Alert.alert(
+                "Error",
+                "Failed to unassign patient. Please try again.",
+                [{ text: "OK" }],
+              );
+            }
+          },
+          style: "destructive",
+        },
+      ],
+    );
+  };
+
+  const getYAxisConfig = (metric) => {
+    // Define y-axis bounds and intervals for different metrics
+    const configMap = {
+      heart_rate: { min: 60, max: 100, interval: 5 },
+      temperature: { min: 36, max: 39, interval: 0.5 },
+      oxygen_saturation: { min: 90, max: 100, interval: 2 },
+      blood_pressure_systolic: { min: 80, max: 160, interval: 10 },
+      blood_pressure_diastolic: { min: 50, max: 100, interval: 10 },
+      respiratory_rate: { min: 12, max: 25, interval: 2 },
+    };
+    return configMap[metric] || { min: 0, max: 100, interval: 10 };
+  };
+
   const renderMetricChart = (metric) => {
     const metricReadings = data
       .filter((datum) => datum.metric === metric)
@@ -203,7 +305,7 @@ const PatientDetails = () => {
     // Determine unit based on metric type
     const unitMap = {
       heart_rate: "bpm",
-      temperature: "°F",
+      temperature: "°C",
       oxygen_saturation: "%",
       blood_pressure_systolic: "mmHg",
       blood_pressure_diastolic: "mmHg",
@@ -211,6 +313,16 @@ const PatientDetails = () => {
     };
 
     const unit = unitMap[metric] || "";
+
+    // Get y-axis configuration for this metric
+    const yAxisConfig = getYAxisConfig(metric);
+
+    // Add invisible min/max values to force the scale
+    const chartData = [...metricData];
+    if (metricData.length > 0) {
+      chartData.push(yAxisConfig.min);
+      chartData.push(yAxisConfig.max);
+    }
 
     return (
       <View key={metric}>
@@ -228,12 +340,12 @@ const PatientDetails = () => {
           height={250}
           yAxisLabel=""
           yAxisSuffix={unit ? ` ${unit}` : ""}
-          yAxisInterval={1}
+          yAxisInterval={yAxisConfig.interval}
           chartConfig={{
             backgroundColor: "white",
             backgroundGradientFrom: "#f8f9fa",
             backgroundGradientTo: "#ffffff",
-            decimalPlaces: 0,
+            decimalPlaces: metric === "temperature" ? 1 : 0,
             color: (opacity = 1) => `rgba(0, 122, 255, ${opacity})`,
             labelColor: (opacity = 1) => `rgba(102, 102, 102, ${opacity})`,
             style: {
@@ -275,7 +387,7 @@ const PatientDetails = () => {
         <View style={{ flex: 1, width: "100%" }}>
           {/* Header */}
           <View style={styles.header}>
-            <Pressable onPress={() => router.back()}>
+            <Pressable onPress={() => router.push("/patients")}>
               <Text style={styles.backButton}>← Back</Text>
             </Pressable>
             <View>
@@ -290,6 +402,30 @@ const PatientDetails = () => {
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
+            {/* Stale Data Warning */}
+            {staleMetrics.size > 0 && (
+              <View style={styles.warningContainer}>
+                <Text style={styles.warningIcon}>⚠️</Text>
+                <View style={styles.warningContent}>
+                  <Text style={styles.warningTitle}>No New Data</Text>
+                  <Text style={styles.warningText}>
+                    {Array.from(staleMetrics)
+                      .map((metric) =>
+                        metric
+                          .split("_")
+                          .map(
+                            (word) =>
+                              word.charAt(0).toUpperCase() + word.slice(1),
+                          )
+                          .join(" "),
+                      )
+                      .join(", ")}{" "}
+                    not updated for 3+ seconds
+                  </Text>
+                </View>
+              </View>
+            )}
+
             {/* Dynamically render charts for each detected metric */}
             {Array.from(detectedMetrics).map((metric) =>
               renderMetricChart(metric),
@@ -309,6 +445,45 @@ const PatientDetails = () => {
                     ? "Hide Historical Data"
                     : "View Historical Data"}
                 </Text>
+              </Pressable>
+            </View>
+
+            {/* View Files Button */}
+            <View style={styles.historyButtonContainer}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.historyButton,
+                  pressed && styles.historyButtonPressed,
+                ]}
+                onPress={() =>
+                  router.push({
+                    pathname: "/patients/files/[id]",
+                    params: { id, name },
+                  })
+                }
+              >
+                <Text style={styles.historyButtonText}>View Patient Files</Text>
+              </Pressable>
+            </View>
+
+            {/* Unassign Patient Button */}
+            <View style={styles.historyButtonContainer}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.unassignButton,
+                  pressed && styles.unassignButtonPressed,
+                  unassigning && styles.unassignButtonDisabled,
+                ]}
+                onPress={handleUnassignPatient}
+                disabled={unassigning}
+              >
+                {unassigning ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <Text style={styles.unassignButtonText}>
+                    Unassign Patient
+                  </Text>
+                )}
               </Pressable>
             </View>
 
@@ -451,5 +626,54 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     color: "#007AFF",
+  },
+  unassignButton: {
+    backgroundColor: "#FF3B30",
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 10,
+    width: "80%",
+    alignItems: "center",
+  },
+  unassignButtonPressed: {
+    backgroundColor: "#CC2D23",
+    opacity: 0.9,
+  },
+  unassignButtonDisabled: {
+    backgroundColor: "#CCC",
+    opacity: 0.6,
+  },
+  unassignButtonText: {
+    color: "white",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  warningContainer: {
+    backgroundColor: "#FFF3CD",
+    borderLeftWidth: 4,
+    borderLeftColor: "#FFC107",
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  warningIcon: {
+    fontSize: 20,
+    marginRight: 12,
+  },
+  warningContent: {
+    flex: 1,
+  },
+  warningTitle: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#856404",
+    marginBottom: 4,
+  },
+  warningText: {
+    fontSize: 12,
+    color: "#856404",
+    lineHeight: 18,
   },
 });

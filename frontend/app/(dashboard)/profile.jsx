@@ -27,17 +27,46 @@ const Profile = () => {
     ]);
   };
 
-  // Fake user data
-  const profileData = {
-    name: "Dr. Sarah Johnson",
-    role: "Medical Doctor",
+  // Hardcoded profile data for each doctor
+  const profileDataMap = {
+    "doctor0@rnsync.com": {
+      name: "Dr. Sarah Johnson",
+      role: "Medical Doctor",
+      specialization: "General Medicine",
+      license: "MD-45678901",
+      joinDate: "January 2023",
+      bio: "Experienced healthcare professional dedicated to patient care and wellness.",
+      location: "New York, NY",
+      phone: "+1 (555) 123-4567",
+    },
+    "Testdoctor0@rnsync.com": {
+      name: "Dr. James Mitchell",
+      role: "Cardiologist",
+      specialization: "Cardiology",
+      license: "MD-98765432",
+      joinDate: "March 2022",
+      bio: "Specialist in heart and cardiovascular system diseases with 10+ years of experience.",
+      location: "San Francisco, CA",
+      phone: "+1 (415) 987-6543",
+    },
+  };
+
+  // Get profile data based on logged-in user
+  const profileData = profileDataMap[user] || {
+    name: "Unknown Doctor",
+    role: "Medical Professional",
     email: user || "doctor@medical.com",
-    phone: "+1 (555) 123-4567",
+    phone: "Not available",
     specialization: "General Medicine",
-    license: "MD-45678901",
-    joinDate: "January 2023",
-    bio: "Experienced healthcare professional dedicated to patient care and wellness.",
-    location: "New York, NY",
+    license: "Not available",
+    joinDate: "Unknown",
+    bio: "Professional healthcare provider.",
+    location: "Unknown",
+  };
+
+  const displayProfileData = {
+    ...profileData,
+    email: user || "doctor@medical.com",
   };
 
   return (
@@ -45,11 +74,16 @@ const Profile = () => {
       {/* Header with Avatar */}
       <View style={styles.headerSection}>
         <View style={styles.avatarContainer}>
-          <Text style={styles.avatarText}>SJ</Text>
+          <Text style={styles.avatarText}>
+            {displayProfileData.name
+              .split(" ")
+              .map((word) => word[0])
+              .join("")}
+          </Text>
         </View>
-        <Text style={styles.name}>{profileData.name}</Text>
-        <Text style={styles.role}>{profileData.role}</Text>
-        <Text style={styles.bio}>{profileData.bio}</Text>
+        <Text style={styles.name}>{displayProfileData.name}</Text>
+        <Text style={styles.role}>{displayProfileData.role}</Text>
+        <Text style={styles.bio}>{displayProfileData.bio}</Text>
       </View>
 
       {/* Contact Information Card */}
@@ -57,17 +91,17 @@ const Profile = () => {
         <Text style={styles.cardTitle}>Contact Information</Text>
         <View style={styles.infoRow}>
           <Text style={styles.label}>Email</Text>
-          <Text style={styles.value}>{profileData.email}</Text>
+          <Text style={styles.value}>{displayProfileData.email}</Text>
         </View>
         <View style={styles.divider} />
         <View style={styles.infoRow}>
           <Text style={styles.label}>Phone</Text>
-          <Text style={styles.value}>{profileData.phone}</Text>
+          <Text style={styles.value}>{displayProfileData.phone}</Text>
         </View>
         <View style={styles.divider} />
         <View style={styles.infoRow}>
           <Text style={styles.label}>Location</Text>
-          <Text style={styles.value}>{profileData.location}</Text>
+          <Text style={styles.value}>{displayProfileData.location}</Text>
         </View>
       </View>
 
@@ -76,17 +110,17 @@ const Profile = () => {
         <Text style={styles.cardTitle}>Professional Information</Text>
         <View style={styles.infoRow}>
           <Text style={styles.label}>Specialization</Text>
-          <Text style={styles.value}>{profileData.specialization}</Text>
+          <Text style={styles.value}>{displayProfileData.specialization}</Text>
         </View>
         <View style={styles.divider} />
         <View style={styles.infoRow}>
           <Text style={styles.label}>License Number</Text>
-          <Text style={styles.value}>{profileData.license}</Text>
+          <Text style={styles.value}>{displayProfileData.license}</Text>
         </View>
         <View style={styles.divider} />
         <View style={styles.infoRow}>
           <Text style={styles.label}>Member Since</Text>
-          <Text style={styles.value}>{profileData.joinDate}</Text>
+          <Text style={styles.value}>{displayProfileData.joinDate}</Text>
         </View>
       </View>
 

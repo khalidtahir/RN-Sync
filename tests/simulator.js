@@ -99,6 +99,17 @@ async function startSimulation() {
   const patients = await getPatients();
   console.log(patients);
 
+  // Initialize patient metrics with base values
+  const patientMetrics = {};
+  patients.forEach((patient) => {
+    if (!patient.name.includes("Test")) {
+      patientMetrics[patient.id] = {
+        heartRate: 72, // Normal resting heart rate
+        temperature: 37.0, // Normal body temperature
+      };
+    }
+  });
+
   // 2. Connect with Token
   const secureUrl = `${WS_URL}?token=${token}`;
   console.log(`Connecting to WebSocket...`);
@@ -113,7 +124,7 @@ async function startSimulation() {
       patients.forEach((patient) => {
         if (!patient.name.includes("Test")) {
           // Heart rate data
-          let data = generateHeartRateData(patient.id);
+          let data = generateHeartRateData(patient.id, patientMetrics);
 
           let message = {
             action: "ingest",
@@ -128,7 +139,7 @@ async function startSimulation() {
           console.log("Sent:", message);
 
           // Temperature data
-          data = generateTemperatureData(patient.id);
+          data = generateTemperatureData(patient.id, patientMetrics);
 
           message = {
             action: "ingest",
@@ -160,22 +171,46 @@ async function startSimulation() {
   });
 }
 
-function generateHeartRateData(patientId) {
-  const heartRate = Math.floor(Math.random() * (100 - 60 + 1)) + 60;
+function generateHeartRateData(patientId, patientMetrics) {
+  // Get the current heart rate for this patient
+  let currentHeartRate = patientMetrics[patientId].heartRate;
+
+  // Simulate natural heart rate variation (±1 to ±3 bpm per second)
+  const variance = Math.floor(Math.random() * 5) - 2; // Random value between -2 and 2
+  let newHeartRate = currentHeartRate + variance;
+
+  // Keep heart rate within realistic bounds (60-100 bpm for normal activity)
+  newHeartRate = Math.max(60, Math.min(100, newHeartRate));
+
+  // Update the stored heart rate for next iteration
+  patientMetrics[patientId].heartRate = newHeartRate;
+
   return {
     metric: "heart_rate",
-    value: heartRate,
+    value: newHeartRate,
     timestamp: new Date().toISOString(),
     patient_id: patientId,
     unit: "bpm",
   };
 }
 
-function generateTemperatureData(patientId) {
-  const temperature = Math.random() * (38.5 - 36.1 + 1) + 36.1;
+function generateTemperatureData(patientId, patientMetrics) {
+  // Get the current temperature for this patient
+  let currentTemp = patientMetrics[patientId].temperature;
+
+  // Simulate natural body temperature variation (±0.05 to ±0.15°C per second)
+  const variance = Math.random() * 0.2 - 0.1; // Random value between -0.1 and 0.1
+  let newTemp = currentTemp + variance;
+
+  // Keep temperature within realistic bounds (36.1-38.5°C, accounting for normal variation)
+  newTemp = Math.max(36.1, Math.min(38.5, newTemp));
+
+  // Update the stored temperature for next iteration
+  patientMetrics[patientId].temperature = newTemp;
+
   return {
     metric: "temperature",
-    value: temperature.toFixed(1),
+    value: parseFloat(newTemp.toFixed(1)),
     timestamp: new Date().toISOString(),
     patient_id: patientId,
     unit: "°C",

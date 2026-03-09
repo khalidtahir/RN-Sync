@@ -23,6 +23,13 @@ export const UserContext = createContext();
 export function UserProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
+  const [userId, setUserId] = useState(null);
+
+  // Hardcoded mapping of email to user ID
+  const emailToIdMap = {
+    "doctor0@rnsync.com": "a77e4a50-2968-46b0-9a99-cfd72da5ce98",
+    "Testdoctor0@rnsync.com": "61d782ad-40a0-4ae9-9f30-4d84efbab7a1",
+  };
 
   async function login(email, password) {
     console.log(`Authenticating as ${email}...`);
@@ -44,10 +51,12 @@ export function UserProvider({ children }) {
       );
 
       setUser(email);
+      setUserId(emailToIdMap[email] || null);
       setToken(response.AuthenticationResult.AccessToken);
       return response.AuthenticationResult.AccessToken;
     } catch (error) {
       setUser(null);
+      setUserId(null);
 
       throw new Error(error);
     }
@@ -56,10 +65,11 @@ export function UserProvider({ children }) {
   function logout() {
     setUser(null);
     setToken(null);
+    setUserId(null);
   }
 
   return (
-    <UserContext.Provider value={{ user, login, logout, token }}>
+    <UserContext.Provider value={{ user, login, logout, token, userId }}>
       {children}
     </UserContext.Provider>
   );
