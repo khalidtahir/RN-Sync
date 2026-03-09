@@ -63,5 +63,12 @@ describe('Auth Handler', () => {
 
         expect(response.policyDocument.Statement[0].Effect).toBe('Deny');
     });
+
+    test('denies request when queryStringParameters is null', async () => {
+        const response = await handler({ ...baseEvent, queryStringParameters: null });
+
+        expect(mockVerifyToken).not.toHaveBeenCalled();
+        expect(response.policyDocument.Statement[0].Effect).toBe('Deny');
+    });
 });
 

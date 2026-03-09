@@ -43,4 +43,14 @@ describe('AuthService', () => {
         expect(policy.policyDocument.Statement[0].Effect).toBe('Allow');
         expect(policy.policyDocument.Statement[0].Resource).toBe('arn:aws:execute-api:...');
     });
+
+    test('generatePolicy omits policyDocument when effect or resource is missing', () => {
+        const noEffect = service.generatePolicy('user1', null, 'arn:...');
+        expect(noEffect.principalId).toBe('user1');
+        expect(noEffect.policyDocument).toBeUndefined();
+
+        const noResource = service.generatePolicy('user1', 'Deny', null);
+        expect(noResource.principalId).toBe('user1');
+        expect(noResource.policyDocument).toBeUndefined();
+    });
 });

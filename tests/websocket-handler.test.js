@@ -83,6 +83,18 @@ describe('WebSocket Handler', () => {
 
         expect(response.statusCode).toBe(500);
         expect(response.body).toContain('Server Error');
+        expect(response.body).toContain('boom');
+    });
+
+    test('returns 500 when ingest body is malformed JSON', async () => {
+        const response = await handler({
+            ...baseEvent,
+            requestContext: { ...baseEvent.requestContext, routeKey: 'ingest' },
+            body: '{ not valid json }'
+        });
+
+        expect(response.statusCode).toBe(500);
+        expect(mockHandleIngest).not.toHaveBeenCalled();
     });
 });
 

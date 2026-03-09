@@ -68,4 +68,15 @@ describe('WebSocketService', () => {
         }));
         expect(response.statusCode).toBe(200);
     });
+
+    test('handleIngest propagates error when insert fails', async () => {
+        mockInsert.mockRejectedValue(new Error('DB write failed'));
+
+        await expect(service.handleIngest({
+            patientId: '123',
+            metric: 'hr',
+            value: 80,
+            unit: 'bpm'
+        })).rejects.toThrow('DB write failed');
+    });
 });
