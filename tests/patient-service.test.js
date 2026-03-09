@@ -191,7 +191,7 @@ describe('PatientService', () => {
         expect(response.success).toBe(true);
     });
 
-    test('updatePatient assigns doctor by email', async () => {
+    test('updatePatient assigns doctor by email when doctor already exists', async () => {
         mockSelect
             .mockResolvedValueOnce([{ id: 'p1', name: 'John', bed: 'ICU-1' }])
             .mockResolvedValueOnce([{ id: 'abc-uuid', name: 'Dr. Smith', email: 'smith@hospital.com' }]);
@@ -200,21 +200,24 @@ describe('PatientService', () => {
         const response = await service.updatePatient('p1', { doctor_email: 'smith@hospital.com' });
 
         expect(mockSelect).toHaveBeenNthCalledWith(2, 'doctors', { filters: { email: 'smith@hospital.com' } });
+        expect(mockInsert).not.toHaveBeenCalled();
         expect(mockUpdate).toHaveBeenCalledWith('patients', { id: 'p1' }, { doctor_id: 'abc-uuid' });
         expect(response.success).toBe(true);
         expect(response.data.doctor_id).toBe('abc-uuid');
     });
 
-    test('updatePatient returns 404 when doctor_email does not match any doctor', async () => {
+    test('updatePatient auto-creates doctor by email on first use', async () => {
         mockSelect
-            .mockResolvedValueOnce([{ id: 'p1' }])
+            .mockResolvedValueOnce([{ id: 'p1', name: 'John', bed: 'ICU-1' }])
             .mockResolvedValueOnce([]);
+        mockInsert.mockResolvedValue(undefined);
+        mockUpdate.mockResolvedValue([{ id: 'p1', doctor_id: 'new-uuid' }]);
 
-        const response = await service.updatePatient('p1', { doctor_email: 'nobody@hospital.com' });
+        const response = await service.updatePatient('p1', { doctor_email: 'newdoctor@hospital.com' });
 
-        expect(response.statusCode).toBe(404);
-        expect(response.message).toBe('Doctor not found');
-        expect(mockUpdate).not.toHaveBeenCalled();
+        expect(mockInsert).toHaveBeenCalledWith('doctors', expect.objectContaining({ email: 'newdoctor@hospital.com' }));
+        expect(mockUpdate).toHaveBeenCalledWith('patients', { id: 'p1' }, expect.objectContaining({ doctor_id: expect.any(String) }));
+        expect(response.success).toBe(true);
     });
 
     test('updatePatient clears doctor_id when doctor_email is null', async () => {
