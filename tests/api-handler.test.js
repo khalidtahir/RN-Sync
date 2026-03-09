@@ -55,7 +55,8 @@ const baseEvent = {
     httpMethod: 'GET',
     path: '/health',
     queryStringParameters: null,
-    body: null
+    body: null,
+    headers: {}
 };
 
 describe('API Handler', () => {
@@ -173,20 +174,17 @@ describe('API Handler', () => {
         expect(deleteResponse.statusCode).toBe(200);
     });
 
-    test('PUT /patients/{id} upserts caller as doctor from Cognito claims then updates patient', async () => {
+    test('routes PUT /patients/{id} to updatePatient with doctor_email', async () => {
         const updatedPatient = { id: 'p1', name: 'John', bed: 'ICU-1', doctor_id: 'uuid-smith' };
-        mockUpsertDoctor.mockResolvedValue({ id: 'uuid-smith', email: 'smith@h.com', name: 'Dr. Smith' });
         mockUpdatePatient.mockResolvedValue({ success: true, data: updatedPatient });
 
         const body = { doctor_email: 'smith@h.com' };
         const response = await invoke({
             path: '/patients/p1',
             httpMethod: 'PUT',
-            body: JSON.stringify(body),
-            requestContext: { authorizer: { claims: { email: 'smith@h.com', name: 'Dr. Smith' } } }
+            body: JSON.stringify(body)
         });
 
-        expect(mockUpsertDoctor).toHaveBeenCalledWith('smith@h.com', 'Dr. Smith');
         expect(mockUpdatePatient).toHaveBeenCalledWith('p1', body);
         expect(response.statusCode).toBe(200);
         const parsed = JSON.parse(response.body);
@@ -194,28 +192,13 @@ describe('API Handler', () => {
         expect(parsed.data.doctor_id).toBe('uuid-smith');
     });
 
-    test('PUT /patients/{id} skips upsert when no Cognito claims present', async () => {
-        mockUpdatePatient.mockResolvedValue({ success: true, data: { id: 'p1', name: 'New Name' } });
-
-        const response = await invoke({
-            path: '/patients/p1',
-            httpMethod: 'PUT',
-            body: JSON.stringify({ name: 'New Name' })
-        });
-
-        expect(mockUpsertDoctor).not.toHaveBeenCalled();
-        expect(response.statusCode).toBe(200);
-    });
-
     test('PUT /patients/{id} returns 404 when patient not found', async () => {
-        mockUpsertDoctor.mockResolvedValue(undefined);
         mockUpdatePatient.mockResolvedValue({ success: false, message: 'Patient not found', statusCode: 404 });
 
         const response = await invoke({
             path: '/patients/missing-id',
             httpMethod: 'PUT',
-            body: JSON.stringify({ doctor_email: 'smith@h.com' }),
-            requestContext: { authorizer: { claims: { email: 'smith@h.com', name: 'Dr. Smith' } } }
+            body: JSON.stringify({ doctor_email: 'smith@h.com' })
         });
 
         expect(response.statusCode).toBe(404);

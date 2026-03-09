@@ -106,14 +106,17 @@ export class PatientService {
             }
         }
 
-        // Allow doctor lookup by email as an alternative to UUID
+        // Allow doctor lookup by email as an alternative to UUID.
+        // Auto-creates the doctor record on first use so the frontend never needs to pre-seed the DB.
         if ('doctor_email' in data) {
             if (data.doctor_email === null) {
                 updateData.doctor_id = null;
             } else {
-                const byEmail = await this.supabase.select('doctors', { filters: { email: data.doctor_email } });
+                let byEmail = await this.supabase.select('doctors', { filters: { email: data.doctor_email } });
                 if (!byEmail || byEmail.length === 0) {
-                    return { success: false, message: 'Doctor not found', statusCode: 404 };
+                    const newDoctor = { id: randomUUID(), email: data.doctor_email, name: data.doctor_email };
+                    await this.supabase.insert('doctors', newDoctor);
+                    byEmail = [newDoctor];
                 }
                 updateData.doctor_id = byEmail[0].id;
             }

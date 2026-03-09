@@ -72,13 +72,6 @@ export const handler = async (event) => {
                 const response = await patientService.getPatientById(id);
                 result = { statusCode: response.statusCode || 200, body: response };
             } else if (httpMethod === 'PUT') {
-                // Auto-seed the calling doctor from Cognito claims so doctor_email lookup always works
-                const claims = event.requestContext?.authorizer?.claims || {};
-                const callerEmail = claims.email;
-                const callerName = claims.name || claims['cognito:username'] || callerEmail;
-                if (callerEmail) {
-                    await doctorService.upsertDoctor(callerEmail, callerName);
-                }
                 const response = await patientService.updatePatient(id, parsedBody);
                 result = { statusCode: response.statusCode || 200, body: response };
             }
