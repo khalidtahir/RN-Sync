@@ -5,6 +5,11 @@ export class DoctorService {
         this.supabase = new SupabaseClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
     }
 
+    async upsertDoctor(email, name) {
+        const doctors = await this.supabase.upsert('doctors', { email, name }, 'email');
+        return doctors[0];
+    }
+
     async getAllDoctors() {
         const doctors = await this.supabase.select('doctors', { order: 'name.asc' });
 

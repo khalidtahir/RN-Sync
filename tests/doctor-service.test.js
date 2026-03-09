@@ -1,10 +1,12 @@
 import { jest } from '@jest/globals';
 
 const mockSelect = jest.fn();
+const mockUpsert = jest.fn();
 
 jest.unstable_mockModule('../src/utils/supabase-client.js', () => ({
     SupabaseClient: jest.fn().mockImplementation(() => ({
-        select: mockSelect
+        select: mockSelect,
+        upsert: mockUpsert
     }))
 }));
 
@@ -15,6 +17,7 @@ describe('DoctorService', () => {
 
     beforeEach(() => {
         mockSelect.mockClear();
+        mockUpsert.mockClear();
         service = new DoctorService();
     });
 
@@ -62,5 +65,26 @@ describe('DoctorService', () => {
         expect(response.success).toBe(false);
         expect(response.statusCode).toBe(404);
         expect(response.message).toBe('Doctor not found');
+    });
+
+    test('upsertDoctor creates doctor on first login and returns the row', async () => {
+        const doctor = { id: 'new-uuid', name: 'Dr. Smith', email: 'smith@h.com' };
+        mockUpsert.mockResolvedValue([doctor]);
+
+        const result = await service.upsertDoctor('smith@h.com', 'Dr. Smith');
+
+        expect(mockUpsert).toHaveBeenCalledWith('doctors', { email: 'smith@h.com', name: 'Dr. Smith' }, 'email');
+        expect(result.id).toBe('new-uuid');
+        expect(result.email).toBe('smith@h.com');
+    });
+
+    test('upsertDoctor returns existing row on subsequent logins', async () => {
+        const existing = { id: 'existing-uuid', name: 'Dr. Smith', email: 'smith@h.com' };
+        mockUpsert.mockResolvedValue([existing]);
+
+        const result = await service.upsertDoctor('smith@h.com', 'Dr. Smith');
+
+        expect(mockUpsert).toHaveBeenCalledTimes(1);
+        expect(result.id).toBe('existing-uuid');
     });
 });

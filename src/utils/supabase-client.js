@@ -77,6 +77,37 @@ export class SupabaseClient {
     }
 
     /**
+     * Upserts a row into a Supabase table, inserting if no conflict or merging if one exists.
+     * @param {string} table - The table name.
+     * @param {Object} data - The data to upsert.
+     * @param {string} conflictColumn - The column to check for conflicts (e.g. 'email').
+     * @returns {Promise<Array>} The upserted rows.
+     */
+    async upsert(table, data, conflictColumn) {
+        if (!this.url || !this.key) {
+            throw new Error("Missing Supabase configuration");
+        }
+
+        const response = await fetch(`${this.url}/rest/v1/${table}?on_conflict=${conflictColumn}`, {
+            method: 'POST',
+            headers: {
+                'apikey': this.key,
+                'Authorization': `Bearer ${this.key}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'return=representation,resolution=merge-duplicates'
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`Supabase error: ${response.status} ${text}`);
+        }
+
+        return await response.json();
+    }
+
+    /**
      * Updates rows in a Supabase table matching the given filters.
      * @param {string} table - The table name.
      * @param {Object} filters - Equality filters to identify rows (e.g. { id: '...' }).
