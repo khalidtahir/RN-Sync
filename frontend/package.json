@@ -7,7 +7,8 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "eas-build-pre-install": "node ./eas-build-pre-install.js"
   },
   "dependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.999.0",
@@ -21,7 +22,7 @@
     "expo-status-bar": "~3.0.9",
     "metro-react-native-babel-preset": "^0.77.0",
     "prop-types": "^15.8.1",
-    "react": "19.1.0",
+    "react": "^19.1.0",
     "react-native": "0.81.5",
     "react-native-boring-avatars": "^1.0.1",
     "react-native-chart-kit": "^6.12.0",
