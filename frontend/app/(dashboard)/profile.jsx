@@ -39,7 +39,7 @@ const Profile = () => {
       location: "New York, NY",
       phone: "+1 (555) 123-4567",
     },
-    "Testdoctor0@rnsync.com": {
+    "Testdoctor1@rnsync.com": {
       name: "Dr. James Mitchell",
       role: "Cardiologist",
       specialization: "Cardiology",

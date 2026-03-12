@@ -28,7 +28,7 @@ export function UserProvider({ children }) {
   // Hardcoded mapping of email to user ID
   const emailToIdMap = {
     "doctor0@rnsync.com": "a77e4a50-2968-46b0-9a99-cfd72da5ce98",
-    "Testdoctor0@rnsync.com": "61d782ad-40a0-4ae9-9f30-4d84efbab7a1",
+    "Testdoctor1@rnsync.com": "2555307b-42f3-46c4-914c-5f922854c036",
   };
 
   async function login(email, password) {
