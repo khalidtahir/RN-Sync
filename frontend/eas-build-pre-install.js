@@ -17,7 +17,7 @@ execSync("sudo chmod -R 777 /Users/expo/workingdir/build", {
 console.log("✅ Permissions adjusted successfully.");
 
 // Now, proceed with your original commands to clean and install.
-execSync("rm -rf node_modules", { stdio: "inherit" });
+execSync("rm -rf node_modules package-lock.json", { stdio: "inherit" });
 execSync("npm install --legacy-peer-deps --unsafe-perm=true", {
   stdio: "inherit",
 });
