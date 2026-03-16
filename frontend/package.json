@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@aws-sdk/client-cognito-identity-provider": "^3.999.0",
-    "aws-sdk": "^2.1693.0",
     "axios": "^1.13.5",
     "buffer": "^6.0.3",
     "expo": "~54.0.32",
@@ -20,20 +19,22 @@
     "expo-linking": "~8.0.11",
     "expo-router": "~6.0.22",
     "expo-status-bar": "~3.0.9",
-    "metro-react-native-babel-preset": "^0.77.0",
     "prop-types": "^15.8.1",
-    "react": "^19.1.0",
+    "react": "19.1.0",
     "react-native": "0.81.5",
     "react-native-boring-avatars": "^1.0.1",
     "react-native-chart-kit": "^6.12.0",
     "react-native-dotenv": "^3.4.11",
-    "react-native-get-random-values": "^2.0.0",
+    "react-native-get-random-values": "~1.11.0",
     "react-native-quick-crypto": "^1.0.7",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
-    "react-native-svg": "^15.15.1",
+    "react-native-svg": "15.12.1",
     "socket.io-client": "^4.8.3",
     "stream": "^0.0.3"
+  },
+  "overrides": {
+    "react-native-svg": "15.12.1"
   },
   "private": true
 }
